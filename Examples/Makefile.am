@@ -14,6 +14,7 @@ SUBDIRS = \
     FittedBondCurve \
     FRA \
     Gaussian1dModels \
+    GlobalOptimizer \
     LatentModel \
     MarketModels \
     MultidimIntegral \
@@ -23,7 +24,7 @@ SUBDIRS = \
 
 SUBDIR_CHECKS = $(SUBDIRS:%=%.check)
 
-EXTRA_DIST = README.txt
+EXTRA_DIST = CMakeLists.txt README.txt
 
 %.check:
 	$(MAKE) -C $* check-examples

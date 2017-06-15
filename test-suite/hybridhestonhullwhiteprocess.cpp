@@ -174,7 +174,6 @@ void HybridHestonHullWhiteProcessTest::testCompareBsmHWandHestonHW() {
     const Handle<Quote> spot(
                          boost::shared_ptr<Quote>(new SimpleQuote(100.0)));
     std::vector<Date> dates;
-    std::vector<Time> times;
     std::vector<Rate> rates, divRates;
 
     for (Size i=0; i <= 40; ++i) {
@@ -182,7 +181,6 @@ void HybridHestonHullWhiteProcessTest::testCompareBsmHWandHestonHW() {
         // FLOATING_POINT_EXCEPTION
         rates.push_back(0.01 + 0.0002*std::exp(std::sin(i/4.0)));
         divRates.push_back(0.02 + 0.0001*std::exp(std::sin(i/5.0)));
-        times.push_back(dc.yearFraction(today, dates.back()));
     }
 
     const Handle<Quote> s0(boost::shared_ptr<Quote>(new SimpleQuote(100)));
@@ -390,7 +388,6 @@ void HybridHestonHullWhiteProcessTest::testMcVanillaPricing() {
     // of the joint stochastic process
 
     std::vector<Date> dates;
-    std::vector<Time> times;
     std::vector<Rate> rates, divRates;
 
     for (Size i=0; i <= 40; ++i) {
@@ -398,7 +395,6 @@ void HybridHestonHullWhiteProcessTest::testMcVanillaPricing() {
         // FLOATING_POINT_EXCEPTION
         rates.push_back(0.03 + 0.0003*std::exp(std::sin(i/4.0)));
         divRates.push_back(0.02 + 0.0001*std::exp(std::sin(i/5.0)));
-        times.push_back(dc.yearFraction(today, dates.back()));
     }
 
     const Date maturity = today + Period(20, Years);
@@ -488,7 +484,6 @@ void HybridHestonHullWhiteProcessTest::testMcPureHestonPricing() {
     // of the joint stochastic process
 
     std::vector<Date> dates;
-    std::vector<Time> times;
     std::vector<Rate> rates, divRates;
 
     for (Size i=0; i <= 100; ++i) {
@@ -496,7 +491,6 @@ void HybridHestonHullWhiteProcessTest::testMcPureHestonPricing() {
         // FLOATING_POINT_EXCEPTION
         rates.push_back(0.02 + 0.0002*std::exp(std::sin(i/10.0)));
         divRates.push_back(0.02 + 0.0001*std::exp(std::sin(i/20.0)));
-        times.push_back(dc.yearFraction(today, dates.back()));
     }
 
     const Date maturity = today + Period(2, Years);
@@ -580,7 +574,6 @@ void HybridHestonHullWhiteProcessTest::testAnalyticHestonHullWhitePricing() {
     // of the joint stochastic process
 
     std::vector<Date> dates;
-    std::vector<Time> times;
     std::vector<Rate> rates, divRates;
 
     for (Size i=0; i <= 40; ++i) {
@@ -588,7 +581,6 @@ void HybridHestonHullWhiteProcessTest::testAnalyticHestonHullWhitePricing() {
         // FLOATING_POINT_EXCEPTION
         rates.push_back(0.03 + 0.0001*std::exp(std::sin(i/4.0)));
         divRates.push_back(0.02 + 0.0002*std::exp(std::sin(i/3.0)));
-        times.push_back(dc.yearFraction(today, dates.back()));
     }
 
     const Date maturity = today + Period(5, Years);
@@ -787,7 +779,6 @@ void HybridHestonHullWhiteProcessTest::testDiscretizationError() {
     // of the joint stochastic process
 
     std::vector<Date> dates;
-    std::vector<Time> times;
     std::vector<Rate> rates, divRates;
 
     for (Size i=0; i <= 31; ++i) {
@@ -795,7 +786,6 @@ void HybridHestonHullWhiteProcessTest::testDiscretizationError() {
         // FLOATING_POINT_EXCEPTION
         rates.push_back(0.04 + 0.0001*std::exp(std::sin(double(i))));
         divRates.push_back(0.04 + 0.0001*std::exp(std::sin(double(i))));
-        times.push_back(dc.yearFraction(today, dates.back()));
     }
 
     const Date maturity = today + Period(10, Years);
@@ -1204,7 +1194,7 @@ namespace {
       private:
         class Impl : public Constraint::Impl {
           public:
-            Impl(Real equityShortRateCorr)
+            explicit Impl(Real equityShortRateCorr)
             : equityShortRateCorr_(equityShortRateCorr) {}
 
             bool test(const Array& params) const {
@@ -1217,7 +1207,8 @@ namespace {
             const Real equityShortRateCorr_;
         };
       public:
-        HestonHullWhiteCorrelationConstraint(Real equityShortRateCorr)
+        explicit HestonHullWhiteCorrelationConstraint(
+            Real equityShortRateCorr)
         : Constraint(boost::shared_ptr<Constraint::Impl>(
              new HestonHullWhiteCorrelationConstraint::Impl(
                                                      equityShortRateCorr))) {}
@@ -1256,7 +1247,7 @@ void HybridHestonHullWhiteProcessTest::testHestonHullWhiteCalibration() {
     const Handle<YieldTermStructure> qTS(flatRate(0.02, dc));
     Handle<Quote> s0(boost::shared_ptr<Quote>(new SimpleQuote(100.0)));
 
-    // starting point the the pure Heston calibration
+    // starting point of the pure Heston calibration
     const Real start_v0    = 0.2*0.2;
     const Real start_theta = start_v0;
     const Real start_kappa = 0.5;
@@ -1510,24 +1501,19 @@ void HybridHestonHullWhiteProcessTest::testH1HWPricingEngine() {
     }
 }
     
-test_suite* HybridHestonHullWhiteProcessTest::suite() {
+test_suite* HybridHestonHullWhiteProcessTest::suite(SpeedLevel speed) {
     test_suite* suite = BOOST_TEST_SUITE("Hybrid Heston-HullWhite tests");
 
-    // FLOATING_POINT_EXCEPTION
     suite->add(QUANTLIB_TEST_CASE(
         &HybridHestonHullWhiteProcessTest::testBsmHullWhiteEngine));
-    // FLOATING_POINT_EXCEPTION
     suite->add(QUANTLIB_TEST_CASE(
         &HybridHestonHullWhiteProcessTest::testCompareBsmHWandHestonHW));
     suite->add(QUANTLIB_TEST_CASE(
         &HybridHestonHullWhiteProcessTest::testZeroBondPricing));
-    // FLOATING_POINT_EXCEPTION
     suite->add(QUANTLIB_TEST_CASE(
         &HybridHestonHullWhiteProcessTest::testMcVanillaPricing));
-    // FLOATING_POINT_EXCEPTION
     suite->add(QUANTLIB_TEST_CASE(
         &HybridHestonHullWhiteProcessTest::testMcPureHestonPricing));
-    // FLOATING_POINT_EXCEPTION
     suite->add(QUANTLIB_TEST_CASE(
       &HybridHestonHullWhiteProcessTest::testAnalyticHestonHullWhitePricing));
     suite->add(QUANTLIB_TEST_CASE(
@@ -1537,13 +1523,19 @@ test_suite* HybridHestonHullWhiteProcessTest::suite() {
     suite->add(QUANTLIB_TEST_CASE(
         &HybridHestonHullWhiteProcessTest::testFdmHestonHullWhiteEngine));
     suite->add(QUANTLIB_TEST_CASE(
-        &HybridHestonHullWhiteProcessTest::testHestonHullWhiteCalibration));
-    suite->add(QUANTLIB_TEST_CASE(
         &HybridHestonHullWhiteProcessTest::testBsmHullWhitePricing));
     suite->add(QUANTLIB_TEST_CASE(
-        &HybridHestonHullWhiteProcessTest::testSpatialDiscretizatinError));
-    suite->add(QUANTLIB_TEST_CASE(
         &HybridHestonHullWhiteProcessTest::testH1HWPricingEngine));
+
+    if (speed <= Fast) {
+        suite->add(QUANTLIB_TEST_CASE(
+            &HybridHestonHullWhiteProcessTest::testSpatialDiscretizatinError));
+    }
+
+    if (speed == Slow) {
+        suite->add(QUANTLIB_TEST_CASE(
+            &HybridHestonHullWhiteProcessTest::testHestonHullWhiteCalibration));
+    }
 
     return suite;
 }

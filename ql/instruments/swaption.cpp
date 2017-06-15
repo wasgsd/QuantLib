@@ -34,13 +34,13 @@ namespace QuantLib {
 
     namespace {
 
-        class ImpliedVolHelper {
+        class ImpliedSwaptionVolHelper {
           public:
-            ImpliedVolHelper(const Swaption&,
-                             const Handle<YieldTermStructure>& discountCurve,
-                             Real targetValue,
-                             Real displacement,
-                             VolatilityType type);
+            ImpliedSwaptionVolHelper(const Swaption&,
+                                     const Handle<YieldTermStructure>& discountCurve,
+                                     Real targetValue,
+                                     Real displacement,
+                                     VolatilityType type);
             Real operator()(Volatility x) const;
             Real derivative(Volatility x) const;
           private:
@@ -51,7 +51,7 @@ namespace QuantLib {
             const Instrument::results* results_;
         };
 
-        ImpliedVolHelper::ImpliedVolHelper(
+        ImpliedSwaptionVolHelper::ImpliedSwaptionVolHelper(
                               const Swaption& swaption,
                               const Handle<YieldTermStructure>& discountCurve,
                               Real targetValue,
@@ -60,22 +60,29 @@ namespace QuantLib {
         : discountCurve_(discountCurve), targetValue_(targetValue) {
 
             // set an implausible value, so that calculation is forced
-            // at first ImpliedVolHelper::operator()(Volatility x) call
+            // at first ImpliedSwaptionVolHelper::operator()(Volatility x) call
             vol_ = boost::shared_ptr<SimpleQuote>(new SimpleQuote(-1.0));
             Handle<Quote> h(vol_);
-            if (type == Normal) {
-                engine_ = boost::make_shared<BachelierSwaptionEngine>(
-                    discountCurve_, h, Actual365Fixed());
-            } else {
+
+            switch (type) {
+            case ShiftedLognormal:
                 engine_ = boost::make_shared<BlackSwaptionEngine>(
                     discountCurve_, h, Actual365Fixed(), displacement);
+                break;
+            case Normal:
+                engine_ = boost::make_shared<BachelierSwaptionEngine>(
+                    discountCurve_, h, Actual365Fixed());
+                break;
+            default:
+                QL_FAIL("unknown VolatilityType (" << type << ")");
+                break;
             }
             swaption.setupArguments(engine_->getArguments());
             results_ = dynamic_cast<const Instrument::results *>(
                 engine_->getResults());
         }
 
-        Real ImpliedVolHelper::operator()(Volatility x) const {
+        Real ImpliedSwaptionVolHelper::operator()(Volatility x) const {
             if (x!=vol_->value()) {
                 vol_->setValue(x);
                 engine_->calculate();
@@ -83,7 +90,7 @@ namespace QuantLib {
             return results_->value-targetValue_;
         }
 
-        Real ImpliedVolHelper::derivative(Volatility x) const {
+        Real ImpliedSwaptionVolHelper::derivative(Volatility x) const {
             if (x!=vol_->value()) {
                 vol_->setValue(x);
                 engine_->calculate();
@@ -148,16 +155,30 @@ namespace QuantLib {
                                            Natural maxEvaluations,
                                            Volatility minVol,
                                            Volatility maxVol,
-                                           Real displacement,
-                                           VolatilityType type) const {
+                                           VolatilityType type,
+                                           Real displacement) const {
         //calculate();
         QL_REQUIRE(!isExpired(), "instrument expired");
 
-        ImpliedVolHelper f(*this, d, targetValue, displacement, type);
+        ImpliedSwaptionVolHelper f(*this, d, targetValue, displacement, type);
         //Brent solver;
         NewtonSafe solver;
         solver.setMaxEvaluations(maxEvaluations);
         return solver.solve(f, accuracy, guess, minVol, maxVol);
+    }
+
+    Volatility Swaption::impliedVolatility(Real targetValue,
+                                           const Handle<YieldTermStructure>& d,
+                                           Volatility guess,
+                                           Real accuracy,
+                                           Natural maxEvaluations,
+                                           Volatility minVol,
+                                           Volatility maxVol,
+                                           Real displacement,
+                                           VolatilityType type) const {
+        return impliedVolatility(targetValue, d, guess, accuracy,
+                                 maxEvaluations, minVol, maxVol,
+                                 type, displacement);
     }
 
 }

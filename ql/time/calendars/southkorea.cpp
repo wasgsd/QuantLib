@@ -90,7 +90,7 @@ namespace QuantLib {
             || ( d == 11                        && m == February && y == 2013)
             || ((d == 30 || d == 31)            && m == January  && y == 2014)
             || ((d == 18 || d == 19 || d == 20) && m == February && y == 2015)
-            || ((d ==  7 || d ==  8 || d ==  9) && m == February && y == 2016)
+            || ((d >=  7 && d <= 10)            && m == February && y == 2016)
             || ((d == 27 || d == 28 || d == 29) && m == January  && y == 2017)
             || ((d == 15 || d == 16 || d == 17) && m == February && y == 2018)
             || ((d ==  4 || d ==  5 || d ==  6) && m == February && y == 2019)
@@ -100,7 +100,6 @@ namespace QuantLib {
                                               && m == February)) && y == 2022)
             || ((d == 21 || d == 22 || d == 23) && m == January  && y == 2023)
             || ((d ==  9 || d == 10 || d == 11) && m == February && y == 2024)
-            || ((d == 28 || d == 29 || d == 30) && m == January  && y == 2025)
             || ((d == 28 || d == 29 || d == 30) && m == January  && y == 2025)
             || ((d == 16 || d == 17 || d == 18) && m == February && y == 2026)
             || ((d ==  5 || d ==  6 || d ==  7) && m == February && y == 2027)
@@ -202,10 +201,15 @@ namespace QuantLib {
         Day d = date.dayOfMonth();
         Weekday w = date.weekday();
         Month m = date.month();
+        Year y = date.year();
 
         if (// Year-end closing
             ((((d == 29 || d == 30) && w == Friday) || d == 31) 
              && m == December)
+            )
+            return false;
+        if (// occasional closing days
+            (d == 6 && m == May && y >= 2016)
             )
             return false;
 

@@ -228,18 +228,18 @@ void DateTest::testConsistency() {
 
     BOOST_TEST_MESSAGE("Testing dates...");
 
-    BigInteger minDate = Date::minDate().serialNumber()+1,
-               maxDate = Date::maxDate().serialNumber();
+    Date::serial_type minDate = Date::minDate().serialNumber()+1,
+                      maxDate = Date::maxDate().serialNumber();
 
-    BigInteger dyold = Date(minDate-1).dayOfYear(),
-               dold  = Date(minDate-1).dayOfMonth(),
-               mold  = Date(minDate-1).month(),
-               yold  = Date(minDate-1).year(),
-               wdold = Date(minDate-1).weekday();
+    Date::serial_type dyold = Date(minDate-1).dayOfYear(),
+                      dold  = Date(minDate-1).dayOfMonth(),
+                      mold  = Date(minDate-1).month(),
+                      yold  = Date(minDate-1).year(),
+                      wdold = Date(minDate-1).weekday();
 
-    for (BigInteger i=minDate; i<=maxDate; i++) {
+    for (Date::serial_type i=minDate; i<=maxDate; i++) {
         Date t(i);
-        BigInteger serial = t.serialNumber();
+        Date::serial_type serial = t.serialNumber();
 
         // check serial number consistency
         if (serial != i)
@@ -433,15 +433,21 @@ void DateTest::intraday() {
 }
 
 
-test_suite* DateTest::suite() {
+test_suite* DateTest::suite(SpeedLevel speed) {
     test_suite* suite = BOOST_TEST_SUITE("Date tests");
+
     suite->add(QUANTLIB_TEST_CASE(&DateTest::testConsistency));
     suite->add(QUANTLIB_TEST_CASE(&DateTest::ecbDates));
     suite->add(QUANTLIB_TEST_CASE(&DateTest::immDates));
-    suite->add(QUANTLIB_TEST_CASE(&DateTest::asxDates));
     suite->add(QUANTLIB_TEST_CASE(&DateTest::isoDates));
+    #ifndef QL_PATCH_SOLARIS
     suite->add(QUANTLIB_TEST_CASE(&DateTest::parseDates));
+    #endif
     suite->add(QUANTLIB_TEST_CASE(&DateTest::intraday));
+
+    if (speed <= Fast) {
+        suite->add(QUANTLIB_TEST_CASE(&DateTest::asxDates));
+    }
 
     return suite;
 }
