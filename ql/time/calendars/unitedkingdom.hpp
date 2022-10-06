@@ -30,7 +30,7 @@
 namespace QuantLib {
 
     //! United Kingdom calendars
-    /*! Public holidays (data from http://www.dti.gov.uk/er/bankhol.htm):
+    /*! Repeating Public holidays (data from https://www.gov.uk/bank-holidays):
         <ul>
         <li>Saturdays</li>
         <li>Sundays</li>
@@ -89,18 +89,18 @@ namespace QuantLib {
       private:
         class SettlementImpl : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "UK settlement"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "UK settlement"; }
+            bool isBusinessDay(const Date&) const override;
         };
         class ExchangeImpl : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "London stock exchange"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "London stock exchange"; }
+            bool isBusinessDay(const Date&) const override;
         };
         class MetalsImpl : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "London metals exchange"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "London metals exchange"; }
+            bool isBusinessDay(const Date&) const override;
         };
       public:
         //! UK calendars

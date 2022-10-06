@@ -79,7 +79,7 @@ namespace QuantLib {
         */
         //@{
         //! hazard rate calculation
-        virtual Real hazardRateImpl(Time) const = 0;
+        Real hazardRateImpl(Time) const override;
         //@}
 
         //! \name DefaultProbabilityTermStructure implementation
@@ -95,9 +95,9 @@ namespace QuantLib {
                      Derived classes should override it if a more efficient
                      implementation is available.
         */
-        Probability survivalProbabilityImpl(Time) const;
+        Probability survivalProbabilityImpl(Time) const override;
         //! default density calculation
-        Real defaultDensityImpl(Time) const;
+        Real defaultDensityImpl(Time) const override;
         //@}
     };
 
