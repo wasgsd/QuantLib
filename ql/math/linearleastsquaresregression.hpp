@@ -29,6 +29,7 @@
 
 #include <ql/math/generallinearleastsquares.hpp>
 #include <ql/functional.hpp>
+#include <type_traits>
 
 namespace QuantLib {
 
@@ -37,8 +38,6 @@ namespace QuantLib {
         template <class Container>
         class LinearFct {
           public:
-            typedef Container argument_type;
-            typedef Real result_type;
             explicit LinearFct(Size i) : i_(i) {}
 
             inline Real operator()(const Container& x) const {
@@ -107,7 +106,7 @@ namespace QuantLib {
                                            const yContainer& y, Real intercept) 
     : GeneralLinearLeastSquares(x, y,
           details::LinearFcts<xContainer, 
-              boost::is_arithmetic<typename xContainer::value_type>::value>
+              std::is_arithmetic<typename xContainer::value_type>::value>
                                                         (x, intercept).fcts()) {
     }
 

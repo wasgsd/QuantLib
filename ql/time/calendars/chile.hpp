@@ -52,13 +52,14 @@ namespace QuantLib {
         <li>All Saints' Day, November 1st</li>
         <li>Immaculate Conception, December 8th</li>
         <li>Christmas Day, December 25th</li>
+        <li>New Year's Eve, December 31st; (see https://www.cmfchile.cl/portal/prensa/615/w3-article-49984.html)</li>
         </ul>
 
         \ingroup calendars
     */
     class Chile : public Calendar {
       private:
-        class SseImpl : public Calendar::WesternImpl {
+        class SseImpl final : public Calendar::WesternImpl {
           public:
             std::string name() const override { return "Santiago Stock Exchange"; }
             bool isBusinessDay(const Date&) const override;

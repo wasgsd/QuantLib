@@ -32,10 +32,6 @@ namespace QuantLib {
     //! Clayton copula
     class ClaytonCopula {
       public:
-        typedef Real first_argument_type;
-        typedef Real second_argument_type;
-        typedef Real result_type;
-
         ClaytonCopula(Real theta);
         Real operator()(Real x, Real y) const;
       private:

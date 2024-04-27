@@ -39,7 +39,6 @@ namespace QuantLib {
     template<class PathType, class ValueType=Real>
     class PathPricer {
       public:
-        typedef PathType argument_type;
         typedef ValueType result_type;
 
         virtual ~PathPricer() = default;

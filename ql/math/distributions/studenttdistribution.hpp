@@ -41,9 +41,6 @@ namespace QuantLib {
     */
     class StudentDistribution {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         StudentDistribution(Integer n) : n_(n) {
             QL_REQUIRE(n > 0, "invalid parameter for t-distribution");
         }
@@ -66,9 +63,6 @@ namespace QuantLib {
     */
     class CumulativeStudentDistribution {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         CumulativeStudentDistribution(Integer n) : n_(n) {
             QL_REQUIRE(n > 0, "invalid parameter for t-distribution");
         }
@@ -84,9 +78,6 @@ namespace QuantLib {
     */
     class InverseCumulativeStudent {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         InverseCumulativeStudent(Integer n,
                                  Real accuracy = 1e-6,
                                  Size maxIterations = 50)

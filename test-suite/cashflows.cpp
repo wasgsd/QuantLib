@@ -17,7 +17,8 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include "cashflows.hpp"
+#include "preconditions.hpp"
+#include "toplevelfixture.hpp"
 #include "utilities.hpp"
 #include <ql/cashflows/cashflows.hpp>
 #include <ql/cashflows/simplecashflow.hpp>
@@ -34,18 +35,19 @@
 #include <ql/indexes/ibor/euribor.hpp>
 #include <ql/indexes/ibor/usdlibor.hpp>
 #include <ql/indexes/ibor/sofr.hpp>
+#include <ql/optional.hpp>
 #include <ql/settings.hpp>
-#include <iomanip>
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
-using boost::none;
 
-void CashFlowsTest::testSettings() {
+BOOST_FIXTURE_TEST_SUITE(QuantLibTests, TopLevelFixture)
+
+BOOST_AUTO_TEST_SUITE(CashFlowTests)
+
+BOOST_AUTO_TEST_CASE(testSettings) {
 
     BOOST_TEST_MESSAGE("Testing cash-flow settings...");
-
-    SavedSettings backup;
 
     Date today = Date::todaysDate();
     Settings::instance().evaluationDate() = today;
@@ -68,7 +70,7 @@ void CashFlowsTest::testSettings() {
     //         today's date
 
     Settings::instance().includeReferenceDateEvents() = false;
-    Settings::instance().includeTodaysCashFlows() = none;
+    Settings::instance().includeTodaysCashFlows() = ext::nullopt;
 
     CHECK_INCLUSION(0, 0, false);
     CHECK_INCLUSION(0, 1, false);
@@ -101,7 +103,7 @@ void CashFlowsTest::testSettings() {
     //         today's date
 
     Settings::instance().includeReferenceDateEvents() = true;
-    Settings::instance().includeTodaysCashFlows() = none;
+    Settings::instance().includeTodaysCashFlows() = ext::nullopt;
 
     CHECK_INCLUSION(0, 0, true);
     CHECK_INCLUSION(0, 1, false);
@@ -163,7 +165,7 @@ void CashFlowsTest::testSettings() {
     } while (false);
 
     // no override
-    Settings::instance().includeTodaysCashFlows() = none;
+    Settings::instance().includeTodaysCashFlows() = ext::nullopt;
 
     CHECK_NPV(false, 2.0);
     CHECK_NPV(true, 3.0);
@@ -176,10 +178,8 @@ void CashFlowsTest::testSettings() {
 
 }
 
-void CashFlowsTest::testAccessViolation() {
+BOOST_AUTO_TEST_CASE(testAccessViolation) {
     BOOST_TEST_MESSAGE("Testing dynamic cast of coupon in Black pricer...");
-
-    SavedSettings backup;
 
     Date todaysDate(7, April, 2010);
     Date settlementDate(9, April, 2010);
@@ -221,7 +221,7 @@ void CashFlowsTest::testAccessViolation() {
     }
 }
 
-void CashFlowsTest::testDefaultSettlementDate() {
+BOOST_AUTO_TEST_CASE(testDefaultSettlementDate) {
     BOOST_TEST_MESSAGE("Testing default evaluation date in cashflows methods...");
     Date today = Settings::instance().evaluationDate();
     Schedule schedule =
@@ -251,7 +251,7 @@ void CashFlowsTest::testDefaultSettlementDate() {
         BOOST_ERROR("null accrued amount with default settlement date");
 }
 
-void CashFlowsTest::testNullFixingDays() {
+BOOST_AUTO_TEST_CASE(testNullFixingDays, *precondition(usingAtParCoupons())) {
     BOOST_TEST_MESSAGE("Testing ibor leg construction with null fixing days...");
     Date today = Settings::instance().evaluationDate();
     Schedule schedule =
@@ -270,7 +270,7 @@ void CashFlowsTest::testNullFixingDays() {
         .withFixingDays(Null<Natural>());
 }
 
-void CashFlowsTest::testExCouponDates() {
+BOOST_AUTO_TEST_CASE(testExCouponDates) {
     BOOST_TEST_MESSAGE("Testing ex-coupon date calculation...");
 
     Date today = Date::todaysDate();
@@ -353,7 +353,7 @@ void CashFlowsTest::testExCouponDates() {
     }
 }
 
-void CashFlowsTest::testIrregularFirstCouponReferenceDatesAtEndOfMonth() {
+BOOST_AUTO_TEST_CASE(testIrregularFirstCouponReferenceDatesAtEndOfMonth) {
     BOOST_TEST_MESSAGE("Testing irregular first coupon reference dates with end of month enabled...");
     Schedule schedule =
         MakeSchedule()
@@ -375,7 +375,34 @@ void CashFlowsTest::testIrregularFirstCouponReferenceDatesAtEndOfMonth() {
                     "got " << firstCoupon->referencePeriodStart());
 }
 
-void CashFlowsTest::testIrregularLastCouponReferenceDatesAtEndOfMonth() {
+BOOST_AUTO_TEST_CASE(testIrregularFirstCouponReferenceDatesAtEndOfCalendarMonth) {
+    BOOST_TEST_MESSAGE("Testing irregular first coupon reference dates at end of calendar month with end of month enabled...");
+    Schedule schedule =
+        MakeSchedule()
+        .withCalendar(UnitedStates(UnitedStates::GovernmentBond))
+        .from(Date(30, September, 2017)).to(Date(30, September, 2022))
+        .withTenor(6*Months)
+        .withConvention(Unadjusted)
+        .withTerminationDateConvention(Unadjusted)
+        .withFirstDate(Date(31, March, 2018))
+        .withNextToLastDate(Date(31, March, 2022))
+        .endOfMonth()
+        .backwards();
+
+    Leg leg = FixedRateLeg(schedule)
+        .withNotionals(100.0)
+        .withCouponRates(0.01875, ActualActual(ActualActual::ISMA));
+
+    ext::shared_ptr<Coupon> firstCoupon =
+        ext::dynamic_pointer_cast<Coupon>(leg.front());
+    if (firstCoupon->referencePeriodStart() != Date(30, September, 2017))
+        BOOST_ERROR("Expected reference start date at end of calendar day of the month, "
+                    "got " << firstCoupon->referencePeriodStart());
+    // Expect first cashflow to be 0.9375
+    BOOST_TEST(firstCoupon->amount() == 0.9375, boost::test_tools::tolerance<Real>(0.0001));
+}
+
+BOOST_AUTO_TEST_CASE(testIrregularLastCouponReferenceDatesAtEndOfMonth) {
     BOOST_TEST_MESSAGE("Testing irregular last coupon reference dates with end of month enabled...");
     Schedule schedule =
             MakeSchedule()
@@ -398,7 +425,7 @@ void CashFlowsTest::testIrregularLastCouponReferenceDatesAtEndOfMonth() {
                             "got " << lastCoupon->referencePeriodEnd());
 }
 
-void CashFlowsTest::testPartialScheduleLegConstruction() {
+BOOST_AUTO_TEST_CASE(testPartialScheduleLegConstruction) {
     BOOST_TEST_MESSAGE("Testing leg construction with partial schedule...");
     // schedule with irregular first and last period
     Schedule schedule = MakeSchedule()
@@ -409,7 +436,7 @@ void CashFlowsTest::testPartialScheduleLegConstruction() {
                             .backwards();
     // same schedule, date based, with metadata
     Schedule schedule2(schedule.dates(), NullCalendar(), Unadjusted, Unadjusted,
-                       6 * Months, boost::none, schedule.endOfMonth(),
+                       6 * Months, ext::nullopt, schedule.endOfMonth(),
                        schedule.isRegular());
     // same schedule, date based, without metadata
     Schedule schedule3(schedule.dates());
@@ -506,10 +533,8 @@ void CashFlowsTest::testPartialScheduleLegConstruction() {
     BOOST_CHECK_EQUAL(lastCpnF3->referencePeriodEnd(), Date(30, Sep, 2020));
 }
 
-void CashFlowsTest::testFixedIborCouponWithoutForecastCurve() {
+BOOST_AUTO_TEST_CASE(testFixedIborCouponWithoutForecastCurve) {
     BOOST_TEST_MESSAGE("Testing past ibor coupon without forecast curve...");
-
-    IndexHistoryCleaner cleaner;
 
     Date today = Settings::instance().evaluationDate();
 
@@ -538,20 +563,6 @@ void CashFlowsTest::testFixedIborCouponWithoutForecastCurve() {
     }
 }
 
-test_suite* CashFlowsTest::suite() {
-    auto* suite = BOOST_TEST_SUITE("Cash flows tests");
-    suite->add(QUANTLIB_TEST_CASE(&CashFlowsTest::testSettings));
-    suite->add(QUANTLIB_TEST_CASE(&CashFlowsTest::testAccessViolation));
-    suite->add(QUANTLIB_TEST_CASE(&CashFlowsTest::testDefaultSettlementDate));
-    suite->add(QUANTLIB_TEST_CASE(&CashFlowsTest::testExCouponDates));
+BOOST_AUTO_TEST_SUITE_END()
 
-    if (IborCoupon::Settings::instance().usingAtParCoupons())
-        suite->add(QUANTLIB_TEST_CASE(&CashFlowsTest::testNullFixingDays));
-
-    suite->add(QUANTLIB_TEST_CASE(&CashFlowsTest::testIrregularFirstCouponReferenceDatesAtEndOfMonth));
-    suite->add(QUANTLIB_TEST_CASE(&CashFlowsTest::testIrregularLastCouponReferenceDatesAtEndOfMonth));
-    suite->add(QUANTLIB_TEST_CASE(&CashFlowsTest::testPartialScheduleLegConstruction));
-    suite->add(QUANTLIB_TEST_CASE(&CashFlowsTest::testFixedIborCouponWithoutForecastCurve));
-
-    return suite;
-}
+BOOST_AUTO_TEST_SUITE_END()

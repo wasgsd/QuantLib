@@ -66,7 +66,11 @@ namespace QuantLib {
         };
       public:
         CashFlows() = delete;
+        CashFlows(CashFlows&&) = delete;
         CashFlows(const CashFlows&) = delete;
+        CashFlows& operator=(CashFlows&&) = delete;
+        CashFlows& operator=(const CashFlows&) = delete;
+        ~CashFlows() = default;
 
         //! \name Date functions
         //@{
@@ -183,18 +187,15 @@ namespace QuantLib {
                         Date settlementDate = Date(),
                         Date npvDate = Date());
 
-        //@{
         //! NPV and BPS of the cash flows.
         /*! The NPV and BPS of the cash flows calculated
             together for performance reason
         */
-        static void npvbps(const Leg& leg,
-                           const YieldTermStructure& discountCurve,
-                           bool includeSettlementDateFlows,
-                           Date settlementDate,
-                           Date npvDate,
-                           Real& npv,
-                           Real& bps);
+        static std::pair<Real, Real> npvbps(const Leg& leg,
+                                            const YieldTermStructure& discountCurve,
+                                            bool includeSettlementDateFlows,
+                                            Date settlementDate = Date(),
+                                            Date npvDate = Date());
 
         //! At-the-money rate of the cash flows.
         /*! The result is the fixed rate for which a fixed rate cash flow

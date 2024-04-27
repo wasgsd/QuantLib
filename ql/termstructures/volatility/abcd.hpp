@@ -93,9 +93,6 @@ namespace QuantLib {
     class AbcdSquared {
       
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         AbcdSquared(Real a, Real b, Real c, Real d, Time T, Time S);
         Real operator()(Time t) const;
       

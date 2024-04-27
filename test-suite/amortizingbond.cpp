@@ -15,7 +15,7 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include "amortizingbond.hpp"
+#include "toplevelfixture.hpp"
 #include "utilities.hpp"
 #include <ql/instruments/bonds/amortizingfixedratebond.hpp>
 #include <ql/cashflows/fixedratecoupon.hpp>
@@ -23,13 +23,19 @@
 #include <ql/time/calendars/nullcalendar.hpp>
 #include <ql/settings.hpp>
 #include <ql/time/calendars/brazil.hpp>
+#include <ql/time/calendars/unitedstates.hpp>
+#include <ql/time/daycounters/actual360.hpp>
 #include <ql/time/daycounters/business252.hpp>
 #include <iostream>
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
-void AmortizingBondTest::testAmortizingFixedRateBond() {
+BOOST_FIXTURE_TEST_SUITE(QuantLibTests, TopLevelFixture)
+
+BOOST_AUTO_TEST_SUITE(AmortizingBondTests)
+
+BOOST_AUTO_TEST_CASE(testAmortizingFixedRateBond) {
     BOOST_TEST_MESSAGE("Testing amortizing fixed rate bond...");
 
     /*
@@ -91,7 +97,7 @@ void AmortizingBondTest::testAmortizingFixedRateBond() {
     }
 }
 
-void AmortizingBondTest::testBrazilianAmortizingFixedRateBond() {
+BOOST_AUTO_TEST_CASE(testBrazilianAmortizingFixedRateBond) {
     BOOST_TEST_MESSAGE("Testing Brazilian amortizing fixed rate bond...");
 
     /*
@@ -153,7 +159,10 @@ void AmortizingBondTest::testBrazilianAmortizingFixedRateBond() {
         1.38600825, 1.23425366, 1.39521333, 1.06968563,
         1.03950542, 1.00065409, 0.90968563, 0.81871706,
         0.79726493, 0.63678002, 0.57187676, 0.49829046,
-        0.32913418, 0.27290565, 0.19062560, 0.08662552
+        // data changed as source (pentagonotrustee.com.br) does not include newly introduced
+        // "Black Awareness Day" holiday
+        0.31177086,
+                    0.27290565, 0.19062560, 0.08662552
     };
 
     Natural settlementDays = 0;
@@ -211,9 +220,66 @@ void AmortizingBondTest::testBrazilianAmortizingFixedRateBond() {
 
 }
 
-test_suite* AmortizingBondTest::suite() {
-    auto* suite = BOOST_TEST_SUITE("Amortizing Bond tests");
-    suite->add(QUANTLIB_TEST_CASE(&AmortizingBondTest::testAmortizingFixedRateBond));
-    suite->add(QUANTLIB_TEST_CASE(&AmortizingBondTest::testBrazilianAmortizingFixedRateBond));
-    return suite;
+BOOST_AUTO_TEST_CASE(testAmortizingFixedRateBondWithDrawDown) {
+    BOOST_TEST_MESSAGE("Testing amortizing fixed rate bond with draw-down...");
+
+    Date issueDate = Date(19, May, 2012);
+    Date maturityDate = Date(25, May, 2017);
+    Calendar calendar = UnitedStates(UnitedStates::GovernmentBond);
+    Natural settlementDays = 3;
+
+    Schedule schedule(issueDate, maturityDate, Period(Semiannual), calendar,
+                      Unadjusted, Unadjusted, DateGeneration::Backward, false);
+
+    std::vector<Real> nominals = { 100.0, 100.0, 100.5, 100.5, 101.5, 101.5, 90.0, 80.0, 70.0, 60.0 };
+    std::vector<Real> rates = { 0.042 };
+
+    Leg leg = FixedRateLeg(schedule)
+        .withNotionals(nominals)
+        .withCouponRates(rates, Actual360())
+        .withPaymentAdjustment(Unadjusted)
+        .withPaymentCalendar(calendar);
+
+    Bond bond(settlementDays, calendar, issueDate, leg);
+
+    const auto& cfs = bond.cashflows();
+
+    // first draw-down
+    Real calculated = cfs.at(2)->amount();
+    Real expected = nominals[1] - nominals[2];
+    Real error = std::fabs(calculated - expected);
+    Real tolerance = 1e-8;
+
+    if(error > tolerance) {
+        BOOST_ERROR("Failed to calculate first draw down: "
+                    << "\n    expected:   " << expected
+                    << "\n    calculated: " << calculated);
+    }
+
+    // second draw-down
+    calculated = cfs.at(5)->amount();
+    expected = nominals[3] - nominals[4];
+    error = std::fabs(calculated - expected);
+
+    if(error > tolerance) {
+        BOOST_ERROR("Failed to calculate second draw down: "
+                    << "\n    expected:   " << expected
+                    << "\n    calculated: " << calculated);
+    }
+
+    // first amortization
+    calculated = cfs.at(8)->amount();
+    expected = nominals[5] - nominals[6];
+    error = std::fabs(calculated - expected);
+
+    if(error > tolerance) {
+        BOOST_ERROR("Failed to calculate fist amortization: "
+                    << "\n    expected:   " << expected
+                    << "\n    calculated: " << calculated);
+    }
+
 }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE_END()

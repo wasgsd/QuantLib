@@ -33,6 +33,7 @@
 #include <ql/indexes/iborindex.hpp>
 #include <ql/patterns/singleton.hpp>
 #include <ql/time/schedule.hpp>
+#include <ql/optional.hpp>
 
 namespace QuantLib {
 
@@ -58,6 +59,7 @@ namespace QuantLib {
         //@}
         //! \name FloatingRateCoupon interface
         //@{
+        Date fixingDate() const override;
         // implemented in order to manage the case of par coupon
         Rate indexFixing() const override;
         void setPricer(const ext::shared_ptr<FloatingRateCouponPricer>&) override;
@@ -99,18 +101,6 @@ namespace QuantLib {
       public:
         // IborCoupon::Settings forward declaration
         class Settings;
-        /*! \deprecated Use IborCouponSettings::Settings::instance().createAtParCoupons() instead
-                        Deprecated in version 1.24.
-        */
-        QL_DEPRECATED static void createAtParCoupons();
-        /*! \deprecated Use IborCouponSettings::Settings::instance().createIndexedCoupons() instead
-                        Deprecated in version 1.24.
-        */
-        QL_DEPRECATED static void createIndexedCoupons();
-        /*! \deprecated Use IborCouponSettings::Settings::instance().usingAtParCoupons() instead
-                        Deprecated in version 1.24.
-        */
-        QL_DEPRECATED static bool usingAtParCoupons();
     };
 
 
@@ -148,7 +138,7 @@ namespace QuantLib {
         IborLeg& withNotionals(const std::vector<Real>& notionals);
         IborLeg& withPaymentDayCounter(const DayCounter&);
         IborLeg& withPaymentAdjustment(BusinessDayConvention);
-        IborLeg& withPaymentLag(Natural lag);
+        IborLeg& withPaymentLag(Integer lag);
         IborLeg& withPaymentCalendar(const Calendar&);
         IborLeg& withFixingDays(Natural fixingDays);
         IborLeg& withFixingDays(const std::vector<Natural>& fixingDays);
@@ -166,7 +156,7 @@ namespace QuantLib {
                                     const Calendar&,
                                     BusinessDayConvention,
                                     bool endOfMonth = false);
-        IborLeg& withIndexedCoupons(boost::optional<bool> b = true);
+        IborLeg& withIndexedCoupons(ext::optional<bool> b = true);
         IborLeg& withAtParCoupons(bool b = true);
         operator Leg() const;
 
@@ -176,7 +166,7 @@ namespace QuantLib {
         std::vector<Real> notionals_;
         DayCounter paymentDayCounter_;
         BusinessDayConvention paymentAdjustment_ = Following;
-        Natural paymentLag_ = 0;
+        Integer paymentLag_ = 0;
         Calendar paymentCalendar_;
         std::vector<Natural> fixingDays_;
         std::vector<Real> gearings_;
@@ -187,7 +177,7 @@ namespace QuantLib {
         Calendar exCouponCalendar_;
         BusinessDayConvention exCouponAdjustment_ = Unadjusted;
         bool exCouponEndOfMonth_ = false;
-        boost::optional<bool> useIndexedCoupons_;
+        ext::optional<bool> useIndexedCoupons_;
     };
 
 }

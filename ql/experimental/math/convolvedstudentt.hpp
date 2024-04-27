@@ -59,8 +59,6 @@ namespace QuantLib {
     */
     class CumulativeBehrensFisher { // ODD orders only by now, rename?
     public:
-        typedef Probability result_type;
-        typedef Real argument_type;
         /*!
             @param degreesFreedom Degrees of freedom of the Ts convolved. The
                 algorithm is limited to odd orders only.
@@ -162,8 +160,6 @@ namespace QuantLib {
      */
     class InverseCumulativeBehrensFisher {
     public:
-        typedef Real result_type;
-        typedef Probability argument_type;
         /*!
             @param degreesFreedom Degrees of freedom of the Ts convolved. The
                 algorithm is limited to odd orders only.

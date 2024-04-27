@@ -44,7 +44,6 @@ this_include_HEADERS = \
     recursivelossmodel.hpp \
     riskyassetswap.hpp \
     riskyassetswapoption.hpp \
-    riskybond.hpp \
     saddlepointlossmodel.hpp \
     spotlosslatentmodel.hpp \
     spreadedhazardratecurve.hpp \
@@ -77,7 +76,6 @@ cpp_files = \
     recoveryratequote.cpp \
     riskyassetswap.cpp \
     riskyassetswapoption.cpp \
-    riskybond.cpp \
     syntheticcdo.cpp
 
 if UNITY_BUILD

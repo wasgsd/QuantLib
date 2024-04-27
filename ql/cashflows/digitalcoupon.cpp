@@ -34,7 +34,7 @@ namespace QuantLib {
                                  Position::Type putPosition,
                                  bool isPutATMIncluded,
                                  Rate putDigitalPayoff,
-                                 const ext::shared_ptr<DigitalReplication>& replication,
+                                 ext::shared_ptr<DigitalReplication> replication,
                                  const bool nakedOption)
     : FloatingRateCoupon(underlying->date(),
                          underlying->nominal(),
@@ -49,15 +49,16 @@ namespace QuantLib {
                          underlying->dayCounter(),
                          underlying->isInArrears()),
       underlying_(underlying), isCallATMIncluded_(isCallATMIncluded),
-      isPutATMIncluded_(isPutATMIncluded),
+      isPutATMIncluded_(isPutATMIncluded), nakedOption_(nakedOption) {
 
-      callLeftEps_(replication->gap() / 2.), callRightEps_(replication->gap() / 2.),
-      putLeftEps_(replication->gap() / 2.), putRightEps_(replication->gap() / 2.),
-
-      replicationType_(replication->replicationType()), nakedOption_(nakedOption) {
-
+        if (replication == nullptr)
+            replication = ext::make_shared<DigitalReplication>();
+        
         QL_REQUIRE(replication->gap()>0.0, "Non positive epsilon not allowed");
 
+        callLeftEps_ = callRightEps_ = putLeftEps_ = putRightEps_ = replication->gap() / 2;
+        replicationType_ = replication->replicationType();
+        
         if (putStrike == Null<Rate>()) {
             QL_REQUIRE(putDigitalPayoff == Null<Rate>(),
             "Put Cash rate non allowed if put strike is null");
@@ -217,7 +218,12 @@ namespace QuantLib {
         return putOptionRate;
     }
 
-    Rate DigitalCoupon::rate() const {
+    void DigitalCoupon::deepUpdate() {
+        update();
+        underlying_->deepUpdate();
+    }
+
+    void DigitalCoupon::performCalculations() const {
 
         QL_REQUIRE(underlying_->pricer(), "pricer not set");
 
@@ -229,18 +235,24 @@ namespace QuantLib {
         if (fixingDate < today ||
             ((fixingDate == today) && enforceTodaysHistoricFixings)) {
             // must have been fixed
-            return underlyingRate + callCsi_ * callPayoff() + putCsi_  * putPayoff();
-        }
-        if (fixingDate == today) {
+            rate_ = underlyingRate + callCsi_ * callPayoff() + putCsi_  * putPayoff();
+        } else if (fixingDate == today) {
             // might have been fixed
             Rate pastFixing =
                 IndexManager::instance().getHistory((underlying_->index())->name())[fixingDate];
             if (pastFixing != Null<Real>()) {
-                return underlyingRate + callCsi_ * callPayoff() + putCsi_  * putPayoff();
-            } else
-                return underlyingRate + callCsi_ * callOptionRate() + putCsi_ * putOptionRate();
+                rate_ = underlyingRate + callCsi_ * callPayoff() + putCsi_  * putPayoff();
+            } else {
+                rate_ = underlyingRate + callCsi_ * callOptionRate() + putCsi_ * putOptionRate();
+            }
+        } else {
+            rate_ = underlyingRate + callCsi_ * callOptionRate() + putCsi_ * putOptionRate();
         }
-        return underlyingRate + callCsi_ * callOptionRate() + putCsi_ * putOptionRate();
+    }
+
+    Rate DigitalCoupon::rate() const {
+        calculate();
+        return rate_;
     }
 
     Rate DigitalCoupon::convexityAdjustment() const {
@@ -273,10 +285,6 @@ namespace QuantLib {
             return putDigitalPayoff_;
         else
             return Null<Rate>();
-    }
-
-    void DigitalCoupon::update() {
-        notifyObservers();
     }
 
     void DigitalCoupon::accept(AcyclicVisitor& v) {

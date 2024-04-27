@@ -41,7 +41,7 @@ namespace QuantLib {
             : payoff_(std::move(payoff)), mesher_(std::move(mesher)), direction_(direction) {}
 
 
-            Real innerValue(const FdmLinearOpIterator& iter, Time t) override {
+            Real innerValue(const FdmLinearOpIterator& iter, Time) override {
                 const Real s = mesher_->location(iter, direction_);
                 return (*payoff_)(s);
             }
@@ -66,6 +66,22 @@ namespace QuantLib {
         Real epsilon,
         const FdmSchemeDesc& schemeDesc)
     : process_(std::move(process)), rTS_(rTS), tGrid_(tGrid), xGrid_(xGrid),
+      dampingSteps_(dampingSteps), epsilon_(epsilon), schemeDesc_(schemeDesc) {
+        registerWith(process_);
+        registerWith(rTS);
+    }
+
+    FdOrnsteinUhlenbeckVanillaEngine::FdOrnsteinUhlenbeckVanillaEngine(
+        ext::shared_ptr<OrnsteinUhlenbeckProcess> process,
+        const ext::shared_ptr<YieldTermStructure>& rTS,
+        DividendSchedule dividends,
+        Size tGrid,
+        Size xGrid,
+        Size dampingSteps,
+        Real epsilon,
+        const FdmSchemeDesc& schemeDesc)
+    : process_(std::move(process)), rTS_(rTS),
+      dividends_(std::move(dividends)), tGrid_(tGrid), xGrid_(xGrid),
       dampingSteps_(dampingSteps), epsilon_(epsilon), schemeDesc_(schemeDesc) {
         registerWith(process_);
         registerWith(rTS);
@@ -97,7 +113,7 @@ namespace QuantLib {
         // 3. Step conditions
         const ext::shared_ptr<FdmStepConditionComposite> conditions =
             FdmStepConditionComposite::vanillaComposite(
-                                    arguments_.cashFlow, arguments_.exercise,
+                                    dividends_, arguments_.exercise,
                                     mesher, calculator,
                                     referenceDate, dc);
 

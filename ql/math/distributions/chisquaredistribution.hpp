@@ -32,9 +32,6 @@ namespace QuantLib {
 
     class CumulativeChiSquareDistribution {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         explicit CumulativeChiSquareDistribution(Real df) : df_(df) {}
         Real operator()(Real x) const;
       private:
@@ -43,9 +40,6 @@ namespace QuantLib {
 
     class NonCentralCumulativeChiSquareDistribution {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         NonCentralCumulativeChiSquareDistribution(Real df, Real ncp)
         : df_(df), ncp_(ncp) {}
         Real operator()(Real x) const;
@@ -55,9 +49,6 @@ namespace QuantLib {
 
     class NonCentralCumulativeChiSquareSankaranApprox {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         NonCentralCumulativeChiSquareSankaranApprox(Real df, Real ncp)
         : df_(df), ncp_(ncp) {}
         Real operator()(Real x) const;
@@ -67,9 +58,6 @@ namespace QuantLib {
 
     class InverseNonCentralCumulativeChiSquareDistribution {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         InverseNonCentralCumulativeChiSquareDistribution(Real df, Real ncp,
                                                Size maxEvaluations=10,
                                                Real accuracy = 1e-8);

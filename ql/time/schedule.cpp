@@ -19,6 +19,7 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
+#include <ql/optional.hpp>
 #include <ql/settings.hpp>
 #include <ql/time/imm.hpp>
 #include <ql/time/schedule.hpp>
@@ -56,16 +57,16 @@ namespace QuantLib {
     Schedule::Schedule(const std::vector<Date>& dates,
                        Calendar calendar,
                        BusinessDayConvention convention,
-                       const boost::optional<BusinessDayConvention>& terminationDateConvention,
-                       const boost::optional<Period>& tenor,
-                       const boost::optional<DateGeneration::Rule>& rule,
-                       const boost::optional<bool>& endOfMonth,
+                       const ext::optional<BusinessDayConvention>& terminationDateConvention,
+                       const ext::optional<Period>& tenor,
+                       const ext::optional<DateGeneration::Rule>& rule,
+                       const ext::optional<bool>& endOfMonth,
                        std::vector<bool> isRegular)
     : tenor_(tenor), calendar_(std::move(calendar)), convention_(convention),
       terminationDateConvention_(terminationDateConvention), rule_(rule), dates_(dates),
       isRegular_(std::move(isRegular)) {
 
-        if (tenor != boost::none && !allowsEndOfMonth(*tenor))
+        if (tenor && !allowsEndOfMonth(*tenor))
             endOfMonth_ = false;
         else
             endOfMonth_ = endOfMonth;
@@ -201,13 +202,10 @@ namespace QuantLib {
 
             seed = terminationDate;
             if (nextToLastDate_ != Date()) {
-                dates_.insert(dates_.begin(), nextToLastDate_);
+                dates_.push_back(nextToLastDate_);
                 Date temp = nullCalendar.advance(seed,
                     -periods*(*tenor_), convention, *endOfMonth_);
-                if (temp!=nextToLastDate_)
-                    isRegular_.insert(isRegular_.begin(), false);
-                else
-                    isRegular_.insert(isRegular_.begin(), true);
+                isRegular_.push_back(temp == nextToLastDate_);
                 seed = nextToLastDate_;
             }
 
@@ -220,29 +218,31 @@ namespace QuantLib {
                     -periods*(*tenor_), convention, *endOfMonth_);
                 if (temp < exitDate) {
                     if (firstDate_ != Date() &&
-                        (calendar_.adjust(dates_.front(),convention)!=
+                        (calendar_.adjust(dates_.back(),convention)!=
                          calendar_.adjust(firstDate_,convention))) {
-                        dates_.insert(dates_.begin(), firstDate_);
-                        isRegular_.insert(isRegular_.begin(), false);
+                        dates_.push_back(firstDate_);
+                        isRegular_.push_back(false);
                     }
                     break;
                 } else {
                     // skip dates that would result in duplicates
                     // after adjustment
-                    if (calendar_.adjust(dates_.front(),convention)!=
+                    if (calendar_.adjust(dates_.back(),convention)!=
                         calendar_.adjust(temp,convention)) {
-                        dates_.insert(dates_.begin(), temp);
-                        isRegular_.insert(isRegular_.begin(), true);
+                        dates_.push_back(temp);
+                        isRegular_.push_back(true);
                     }
                     ++periods;
                 }
             }
 
-            if (calendar_.adjust(dates_.front(),convention)!=
+            if (calendar_.adjust(dates_.back(),convention)!=
                 calendar_.adjust(effectiveDate,convention)) {
-                dates_.insert(dates_.begin(), effectiveDate);
-                isRegular_.insert(isRegular_.begin(), false);
+                dates_.push_back(effectiveDate);
+                isRegular_.push_back(false);
             }
+	    std::reverse(dates_.begin(), dates_.end());
+	    std::reverse(isRegular_.begin(), isRegular_.end());
             break;
 
           case DateGeneration::Twentieth:
@@ -358,6 +358,21 @@ namespace QuantLib {
             for (auto& date : dates_)
                 date = Date::nthWeekday(3, Wednesday, date.month(), date.year());
 
+        // first date not adjusted for old CDS schedules
+        if (convention != Unadjusted && *rule_ != DateGeneration::OldCDS)
+            dates_.front() = calendar_.adjust(dates_.front(), convention);
+
+        // termination date is NOT adjusted as per ISDA
+        // specifications, unless otherwise specified in the
+        // confirmation of the deal or unless we're creating a CDS
+        // schedule
+        if (terminationDateConvention != Unadjusted 
+            && *rule_ != DateGeneration::CDS 
+            && *rule_ != DateGeneration::CDS2015) {
+            dates_.back() = calendar_.adjust(dates_.back(), 
+                                             terminationDateConvention);
+        }
+
         if (*endOfMonth_ && calendar_.isEndOfMonth(seed)) {
             // adjust to end of month
             if (convention == Unadjusted) {
@@ -367,41 +382,9 @@ namespace QuantLib {
                 for (Size i=1; i<dates_.size()-1; ++i)
                     dates_[i] = calendar_.endOfMonth(dates_[i]);
             }
-            Date d1 = dates_.front(), d2 = dates_.back();
-            if (terminationDateConvention != Unadjusted) {
-                d1 = calendar_.endOfMonth(dates_.front());
-                d2 = calendar_.endOfMonth(dates_.back());
-            } else {
-                // the termination date is the first if going backwards,
-                // the last otherwise.
-                if (*rule_ == DateGeneration::Backward)
-                    d2 = Date::endOfMonth(dates_.back());
-                else
-                    d1 = Date::endOfMonth(dates_.front());
-            }
-            // if the eom adjustment leads to a single date schedule
-            // we do not apply it
-            if(d1 != d2) {
-                dates_.front() = d1;
-                dates_.back() = d2;
-            }
         } else {
-            // first date not adjusted for old CDS schedules
-            if (*rule_ != DateGeneration::OldCDS)
-                dates_[0] = calendar_.adjust(dates_[0], convention);
             for (Size i=1; i<dates_.size()-1; ++i)
                 dates_[i] = calendar_.adjust(dates_[i], convention);
-
-            // termination date is NOT adjusted as per ISDA
-            // specifications, unless otherwise specified in the
-            // confirmation of the deal or unless we're creating a CDS
-            // schedule
-            if (terminationDateConvention != Unadjusted
-                && *rule_ != DateGeneration::CDS
-                && *rule_ != DateGeneration::CDS2015) {
-                dates_.back() = calendar_.adjust(dates_.back(),
-                                                 terminationDateConvention);
-            }
         }
 
         // Final safety checks to remove extra next-to-last date, if

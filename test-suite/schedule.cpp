@@ -17,13 +17,14 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include "schedule.hpp"
+#include "toplevelfixture.hpp"
 #include "utilities.hpp"
 #include <ql/time/schedule.hpp>
 #include <ql/time/calendars/target.hpp>
 #include <ql/time/calendars/japan.hpp>
 #include <ql/time/calendars/unitedstates.hpp>
 #include <ql/time/calendars/weekendsonly.hpp>
+#include <ql/time/calendars/nullcalendar.hpp>
 #include <ql/instruments/creditdefaultswap.hpp>
 #include <map>
 #include <vector>
@@ -36,27 +37,27 @@ using std::map;
 using std::pair;
 using std::vector;
 
-namespace {
+BOOST_FIXTURE_TEST_SUITE(QuantLibTests, TopLevelFixture)
 
-    void check_dates(const Schedule& s,
-                     const std::vector<Date>& expected) {
-        if (s.size() != expected.size()) {
-            BOOST_FAIL("expected " << expected.size() << " dates, "
-                       << "found " << s.size());
-        }
-        for (Size i=0; i<expected.size(); ++i) {
-            if (s[i] != expected[i]) {
-                BOOST_ERROR("expected " << expected[i]
-                            << " at index " << i << ", "
-                            "found " << s[i]);
-            }
+BOOST_AUTO_TEST_SUITE(ScheduleTests)
+
+void check_dates(const Schedule& s,
+                 const std::vector<Date>& expected) {
+    if (s.size() != expected.size()) {
+        BOOST_FAIL("expected " << expected.size() << " dates, "
+                   << "found " << s.size());
+    }
+    for (Size i=0; i<expected.size(); ++i) {
+        if (s[i] != expected[i]) {
+            BOOST_ERROR("expected " << expected[i]
+                        << " at index " << i << ", "
+                        "found " << s[i]);
         }
     }
-
 }
 
 
-void ScheduleTest::testDailySchedule() {
+BOOST_AUTO_TEST_CASE(testDailySchedule) {
     BOOST_TEST_MESSAGE("Testing schedule with daily frequency...");
 
     Date startDate = Date(17,January,2012);
@@ -81,7 +82,7 @@ void ScheduleTest::testDailySchedule() {
     check_dates(s, expected);
 }
 
-void ScheduleTest::testEndDateWithEomAdjustment() {
+BOOST_AUTO_TEST_CASE(testEndDateWithEomAdjustment) {
     BOOST_TEST_MESSAGE(
         "Testing end date for schedule with end-of-month adjustment...");
 
@@ -96,35 +97,18 @@ void ScheduleTest::testEndDateWithEomAdjustment() {
                       .endOfMonth();
 
     std::vector<Date> expected(7);
-    // The end date is adjusted, so it should also be moved to the end
-    // of the month.
     expected[0] = Date(30,September,2009);
     expected[1] = Date(31,March,2010);
     expected[2] = Date(30,September,2010);
     expected[3] = Date(31,March,2011);
     expected[4] = Date(30,September,2011);
     expected[5] = Date(30,March,2012);
-    expected[6] = Date(29,June,2012);
-
-    check_dates(s, expected);
-
-    // now with unadjusted termination date...
-    s = MakeSchedule().from(Date(30,September,2009))
-                      .to(Date(15,June,2012))
-                      .withCalendar(Japan())
-                      .withTenor(6*Months)
-                      .withConvention(Following)
-                      .withTerminationDateConvention(Unadjusted)
-                      .forwards()
-                      .endOfMonth();
-    // ...which should leave it alone.
     expected[6] = Date(15,June,2012);
 
     check_dates(s, expected);
 }
 
-
-void ScheduleTest::testDatesPastEndDateWithEomAdjustment() {
+BOOST_AUTO_TEST_CASE(testDatesPastEndDateWithEomAdjustment) {
     BOOST_TEST_MESSAGE(
         "Testing that no dates are past the end date with EOM adjustment...");
 
@@ -139,7 +123,7 @@ void ScheduleTest::testDatesPastEndDateWithEomAdjustment() {
                       .endOfMonth();
 
     std::vector<Date> expected(3);
-    expected[0] = Date(31,March,2013);
+    expected[0] = Date(28,March,2013);
     expected[1] = Date(31,March,2014);
     // March 31st 2015, coming from the EOM adjustment of March 28th,
     // should be discarded as past the end date.
@@ -152,7 +136,7 @@ void ScheduleTest::testDatesPastEndDateWithEomAdjustment() {
         BOOST_ERROR("last period should not be regular");
 }
 
-void ScheduleTest::testDatesSameAsEndDateWithEomAdjustment() {
+BOOST_AUTO_TEST_CASE(testDatesSameAsEndDateWithEomAdjustment) {
     BOOST_TEST_MESSAGE(
         "Testing that next-to-last date same as end date is removed...");
 
@@ -167,7 +151,7 @@ void ScheduleTest::testDatesSameAsEndDateWithEomAdjustment() {
                       .endOfMonth();
 
     std::vector<Date> expected(3);
-    expected[0] = Date(31,March,2013);
+    expected[0] = Date(28,March,2013);
     expected[1] = Date(31,March,2014);
     // March 31st 2015, coming from the EOM adjustment of March 28th,
     // should be discarded as the same as the end date.
@@ -180,7 +164,7 @@ void ScheduleTest::testDatesSameAsEndDateWithEomAdjustment() {
         BOOST_ERROR("last period should be regular");
 }
 
-void ScheduleTest::testForwardDatesWithEomAdjustment() {
+BOOST_AUTO_TEST_CASE(testForwardDatesWithEomAdjustment) {
     BOOST_TEST_MESSAGE(
         "Testing that the last date is not adjusted for EOM when "
         "termination date convention is unadjusted...");
@@ -204,7 +188,7 @@ void ScheduleTest::testForwardDatesWithEomAdjustment() {
     check_dates(s, expected);
 }
 
-void ScheduleTest::testBackwardDatesWithEomAdjustment() {
+BOOST_AUTO_TEST_CASE(testBackwardDatesWithEomAdjustment) {
     BOOST_TEST_MESSAGE(
         "Testing that the first date is not adjusted for EOM "
         "going backward when termination date convention is unadjusted...");
@@ -228,7 +212,7 @@ void ScheduleTest::testBackwardDatesWithEomAdjustment() {
     check_dates(s, expected);
 }
 
-void ScheduleTest::testDoubleFirstDateWithEomAdjustment() {
+BOOST_AUTO_TEST_CASE(testDoubleFirstDateWithEomAdjustment) {
     BOOST_TEST_MESSAGE(
         "Testing that the first date is not duplicated due to "
         "EOM convention when going backwards...");
@@ -243,10 +227,85 @@ void ScheduleTest::testDoubleFirstDateWithEomAdjustment() {
                       .backwards()
                       .endOfMonth();
 
-    std::vector<Date> expected(3);
-    expected[0] = Date(30,August,1996);
-    expected[1] = Date(28,February,1997);
-    expected[2] = Date(29,August,1997);
+    std::vector<Date> expected(4);
+    expected[0] = Date(22, August, 1996);
+    expected[1] = Date(30,August,1996);
+    expected[2] = Date(28,February,1997);
+    expected[3] = Date(2,September,1997);
+
+    check_dates(s, expected);
+}
+
+BOOST_AUTO_TEST_CASE(testFirstDateWithEomAdjustment) {
+    BOOST_TEST_MESSAGE("Testing schedule with first date and EOM adjustments...");
+
+    Schedule schedule = MakeSchedule()
+                            .from(Date(10, August, 1996))
+                            .to(Date(10, August, 1998))
+                            .withFirstDate(Date(28, February, 1997))
+                            .withCalendar(UnitedStates(UnitedStates::GovernmentBond))
+                            .withTenor(6 * Months)
+                            .withConvention(Following)
+                            .withTerminationDateConvention(Following)
+                            .forwards()
+                            .endOfMonth();
+
+    std::vector<Date> expected(5);
+    expected[0] = Date(12, August, 1996);
+    expected[1] = Date(28, February, 1997);
+    expected[2] = Date(29, August, 1997);
+    expected[3] = Date(27, February, 1998);
+    expected[4] = Date(10, August, 1998);
+
+    check_dates(schedule, expected);
+}
+
+BOOST_AUTO_TEST_CASE(testNextToLastWithEomAdjustment) {
+    BOOST_TEST_MESSAGE("Testing schedule with next to last date and EOM adjustments...");
+
+    Schedule schedule = MakeSchedule()
+                            .from(Date(10, August, 1996))
+                            .to(Date(10, August, 1998))
+                            .withNextToLastDate(Date(28, February, 1998))
+                            .withCalendar(UnitedStates(UnitedStates::GovernmentBond))
+                            .withTenor(6 * Months)
+                            .withConvention(Following)
+                            .withTerminationDateConvention(Following)
+                            .backwards()
+                            .endOfMonth();
+
+    std::vector<Date> expected(6);
+    expected[0] = Date(12, August, 1996);
+    expected[1] = Date(30, August, 1996);
+    expected[2] = Date(28, February, 1997);
+    expected[3] = Date(29, August, 1997);
+    expected[4] = Date(27, February, 1998);
+    expected[5] = Date(10, August, 1998);
+
+    check_dates(schedule, expected);
+}
+
+BOOST_AUTO_TEST_CASE(testEffectiveDateWithEomAdjustment) {
+    BOOST_TEST_MESSAGE(
+        "Testing forward schedule with EOM adjustment and effective date and first date in the same month...");
+
+    Schedule s =
+        MakeSchedule().from(Date(16,January,2023))
+                      .to(Date(16,March,2023))
+                      .withFirstDate(Date(31,January,2023))
+                      .withCalendar(NullCalendar())
+                      .withTenor(1*Months)
+                      .withConvention(Unadjusted)
+                      .withTerminationDateConvention(Unadjusted)
+                      .forwards()
+                      .endOfMonth();
+
+    std::vector<Date> expected(4);
+    // check that the effective date is not moved at the end of the month
+    expected[0] = Date(16,January,2023);
+    expected[1] = Date(31,January,2023);
+    expected[2] = Date(28,February,2023);
+    expected[3] = Date(16,March,2023);
 
     check_dates(s, expected);
 }
@@ -290,7 +349,7 @@ namespace CdsTests {
     }
 }
 
-void ScheduleTest::testCDS2015Convention() {
+BOOST_AUTO_TEST_CASE(testCDS2015Convention) {
 
     using CdsTests::makeCdsSchedule;
 
@@ -347,7 +406,7 @@ void ScheduleTest::testCDS2015Convention() {
     BOOST_CHECK_EQUAL(s.endDate(), expMaturity);
 }
 
-void ScheduleTest::testCDS2015ConventionGrid() {
+BOOST_AUTO_TEST_CASE(testCDS2015ConventionGrid) {
 
     using CdsTests::InputData;
 
@@ -432,7 +491,7 @@ void ScheduleTest::testCDS2015ConventionGrid() {
     CdsTests::testCDSConventions(inputs, DateGeneration::CDS2015);
 }
 
-void ScheduleTest::testCDSConventionGrid() {
+BOOST_AUTO_TEST_CASE(testCDSConventionGrid) {
 
     using CdsTests::InputData;
 
@@ -523,7 +582,7 @@ void ScheduleTest::testCDSConventionGrid() {
     CdsTests::testCDSConventions(inputs, DateGeneration::CDS);
 }
 
-void ScheduleTest::testOldCDSConventionGrid() {
+BOOST_AUTO_TEST_CASE(testOldCDSConventionGrid) {
 
     using CdsTests::InputData;
 
@@ -602,7 +661,7 @@ void ScheduleTest::testOldCDSConventionGrid() {
     CdsTests::testCDSConventions(inputs, DateGeneration::OldCDS);
 }
 
-void ScheduleTest::testCDS2015ConventionSampleDates() {
+BOOST_AUTO_TEST_CASE(testCDS2015ConventionSampleDates) {
 
     BOOST_TEST_MESSAGE("Testing all dates in sample CDS schedule(s) for rule CDS2015...");
 
@@ -665,7 +724,7 @@ void ScheduleTest::testCDS2015ConventionSampleDates() {
     check_dates(s, expDates);
 }
 
-void ScheduleTest::testCDSConventionSampleDates() {
+BOOST_AUTO_TEST_CASE(testCDSConventionSampleDates) {
 
     BOOST_TEST_MESSAGE("Testing all dates in sample CDS schedule(s) for rule CDS...");
 
@@ -725,7 +784,7 @@ void ScheduleTest::testCDSConventionSampleDates() {
     check_dates(s, expDates);
 }
 
-void ScheduleTest::testOldCDSConventionSampleDates() {
+BOOST_AUTO_TEST_CASE(testOldCDSConventionSampleDates) {
 
     BOOST_TEST_MESSAGE("Testing all dates in sample CDS schedule(s) for rule OldCDS...");
 
@@ -787,7 +846,7 @@ void ScheduleTest::testOldCDSConventionSampleDates() {
     check_dates(s, expDates);
 }
 
-void ScheduleTest::testCDS2015ZeroMonthsMatured() {
+BOOST_AUTO_TEST_CASE(testCDS2015ZeroMonthsMatured) {
 
     BOOST_TEST_MESSAGE("Testing 0M tenor for CDS2015 where matured...");
 
@@ -810,7 +869,7 @@ void ScheduleTest::testCDS2015ZeroMonthsMatured() {
     }
 }
 
-void ScheduleTest::testDateConstructor() {
+BOOST_AUTO_TEST_CASE(testDateConstructor) {
     BOOST_TEST_MESSAGE("Testing the constructor taking a vector of dates and "
                        "possibly additional meta information...");
 
@@ -867,7 +926,7 @@ void ScheduleTest::testDateConstructor() {
         BOOST_ERROR("schedule2 has end of month flag false, expected true");
 }
 
-void ScheduleTest::testFourWeeksTenor() {
+BOOST_AUTO_TEST_CASE(testFourWeeksTenor) {
     BOOST_TEST_MESSAGE(
         "Testing that a four-weeks tenor works...");
 
@@ -884,7 +943,7 @@ void ScheduleTest::testFourWeeksTenor() {
     }
 }
 
-void ScheduleTest::testScheduleAlwaysHasAStartDate() {
+BOOST_AUTO_TEST_CASE(testScheduleAlwaysHasAStartDate) {
     BOOST_TEST_MESSAGE("Testing that variations of MakeSchedule "
                        "always produce a schedule with a start date...");
     // Attempt to establish whether the first coupoun payment date is
@@ -920,7 +979,7 @@ void ScheduleTest::testScheduleAlwaysHasAStartDate() {
               "The first element should always be the start date");
 }
 
-void ScheduleTest::testShortEomSchedule() {
+BOOST_AUTO_TEST_CASE(testShortEomSchedule) {
     BOOST_TEST_MESSAGE("Testing short end-of-month schedule...");
     Schedule s;
     // seg-faults in 1.15
@@ -938,7 +997,7 @@ void ScheduleTest::testShortEomSchedule() {
     BOOST_CHECK(s[1] == Date(28, Feb, 2019));
 }
 
-void ScheduleTest::testFirstDateOnMaturity() {
+BOOST_AUTO_TEST_CASE(testFirstDateOnMaturity) {
     BOOST_TEST_MESSAGE("Testing schedule with first date on maturity...");
     Schedule schedule = MakeSchedule()
         .from(Date(20, September, 2016))
@@ -967,7 +1026,7 @@ void ScheduleTest::testFirstDateOnMaturity() {
     check_dates(schedule, expected);
 }
 
-void ScheduleTest::testNextToLastDateOnStart() {
+BOOST_AUTO_TEST_CASE(testNextToLastDateOnStart) {
     BOOST_TEST_MESSAGE("Testing schedule with next-to-last date on start date...");
     Schedule schedule = MakeSchedule()
         .from(Date(20, September, 2016))
@@ -996,7 +1055,7 @@ void ScheduleTest::testNextToLastDateOnStart() {
     check_dates(schedule, expected);
 }
 
-void ScheduleTest::testTruncation() {
+BOOST_AUTO_TEST_CASE(testTruncation) {
     BOOST_TEST_MESSAGE("Testing schedule truncation...");
     Schedule s = MakeSchedule().from(Date(30, September, 2009))
         .to(Date(15, June, 2020))
@@ -1058,7 +1117,7 @@ void ScheduleTest::testTruncation() {
     expected[11] = Date(29, March, 2019);
     expected[12] = Date(30, September, 2019);
     expected[13] = Date(31, March, 2020);
-    expected[14] = Date(30, June, 2020);
+    expected[14] = Date(15, June, 2020);
     check_dates(t, expected);
     BOOST_CHECK(t.isRegular().front() == false);
 
@@ -1069,39 +1128,11 @@ void ScheduleTest::testTruncation() {
     expected[1] = Date(29, March, 2019);
     expected[2] = Date(30, September, 2019);
     expected[3] = Date(31, March, 2020);
-    expected[4] = Date(30, June, 2020);
+    expected[4] = Date(15, June, 2020);
     check_dates(t, expected);
     BOOST_CHECK(t.isRegular().front() == true);
 }
 
-test_suite* ScheduleTest::suite() {
-    auto* suite = BOOST_TEST_SUITE("Schedule tests");
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testDailySchedule));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testEndDateWithEomAdjustment));
-    suite->add(QUANTLIB_TEST_CASE(
-        &ScheduleTest::testDatesPastEndDateWithEomAdjustment));
-    suite->add(QUANTLIB_TEST_CASE(
-        &ScheduleTest::testDatesSameAsEndDateWithEomAdjustment));
-    suite->add(QUANTLIB_TEST_CASE(
-        &ScheduleTest::testForwardDatesWithEomAdjustment));
-    suite->add(QUANTLIB_TEST_CASE(
-        &ScheduleTest::testBackwardDatesWithEomAdjustment));
-    suite->add(QUANTLIB_TEST_CASE(
-        &ScheduleTest::testDoubleFirstDateWithEomAdjustment));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testCDS2015Convention));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testCDS2015ConventionGrid));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testCDSConventionGrid));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testOldCDSConventionGrid));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testCDS2015ConventionSampleDates));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testCDSConventionSampleDates));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testOldCDSConventionSampleDates));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testCDS2015ZeroMonthsMatured));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testDateConstructor));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testFourWeeksTenor));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testScheduleAlwaysHasAStartDate));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testShortEomSchedule));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testFirstDateOnMaturity));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testNextToLastDateOnStart));
-    suite->add(QUANTLIB_TEST_CASE(&ScheduleTest::testTruncation));
-    return suite;
-}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE_END()

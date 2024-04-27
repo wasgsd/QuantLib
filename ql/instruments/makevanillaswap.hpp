@@ -54,6 +54,7 @@ namespace QuantLib {
         MakeVanillaSwap& withEffectiveDate(const Date&);
         MakeVanillaSwap& withTerminationDate(const Date&);
         MakeVanillaSwap& withRule(DateGeneration::Rule r);
+        MakeVanillaSwap& withPaymentConvention(BusinessDayConvention bdc);
 
         MakeVanillaSwap& withFixedLegTenor(const Period& t);
         MakeVanillaSwap& withFixedLegCalendar(const Calendar& cal);
@@ -82,7 +83,7 @@ namespace QuantLib {
                               const Handle<YieldTermStructure>& discountCurve);
         MakeVanillaSwap& withPricingEngine(
                               const ext::shared_ptr<PricingEngine>& engine);
-        MakeVanillaSwap& withIndexedCoupons(const boost::optional<bool>& b = true);
+        MakeVanillaSwap& withIndexedCoupons(const ext::optional<bool>& b = true);
         MakeVanillaSwap& withAtParCoupons(bool b = true);
       private:
         Period swapTenor_;
@@ -107,7 +108,8 @@ namespace QuantLib {
         Date floatFirstDate_, floatNextToLastDate_;
         Spread floatSpread_ = 0.0;
         DayCounter fixedDayCount_, floatDayCount_;
-        boost::optional<bool> useIndexedCoupons_;
+        ext::optional<bool> useIndexedCoupons_;
+        ext::optional<BusinessDayConvention> paymentConvention_;
 
         ext::shared_ptr<PricingEngine> engine_;
     };

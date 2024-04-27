@@ -38,19 +38,34 @@ namespace QuantLib {
         Size xGrid,
         Size dampingSteps,
         const FdmSchemeDesc& schemeDesc)
-    : process_(std::move(process)), tGrid_(tGrid), xGrid_(xGrid), dampingSteps_(dampingSteps),
+    : process_(std::move(process)),
+      tGrid_(tGrid), xGrid_(xGrid), dampingSteps_(dampingSteps),
+      schemeDesc_(schemeDesc) {
+        registerWith(process_);
+    }
+
+    FdBlackScholesShoutEngine::FdBlackScholesShoutEngine(
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process,
+        DividendSchedule dividends,
+        Size tGrid,
+        Size xGrid,
+        Size dampingSteps,
+        const FdmSchemeDesc& schemeDesc)
+    : process_(std::move(process)), dividends_(std::move(dividends)),
+      tGrid_(tGrid), xGrid_(xGrid), dampingSteps_(dampingSteps),
       schemeDesc_(schemeDesc) {
         registerWith(process_);
     }
 
     void FdBlackScholesShoutEngine::calculate() const {
+
         const Date exerciseDate = arguments_.exercise->lastDate();
         const Time maturity = process_->time(exerciseDate);
         const Date settlementDate = process_->riskFreeRate()->referenceDate();
 
         const auto escrowedDividendAdj =
             ext::make_shared<EscrowedDividendAdjustment>(
-                arguments_.cashFlow,
+                dividends_,
                 process_->riskFreeRate(),
                 process_->dividendYield(),
                 [&](Date d){ return process_->time(d); },
@@ -84,7 +99,7 @@ namespace QuantLib {
                 escrowedDividendAdj, maturity, payoff, mesher, 0);
 
         DividendSchedule zeroDividendSchedule = DividendSchedule();
-        for (const auto& cf: arguments_.cashFlow)
+        for (const auto& cf: dividends_)
             zeroDividendSchedule.push_back(
                 ext::make_shared<FixedDividend>(0.0, cf->date()));
 

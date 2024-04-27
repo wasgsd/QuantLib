@@ -50,9 +50,6 @@ namespace QuantLib {
     */
     class BinomialDistribution {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         BinomialDistribution(Real p, BigNatural n);
         // function
         Real operator()(BigNatural k) const;
@@ -69,9 +66,6 @@ namespace QuantLib {
     */
     class CumulativeBinomialDistribution {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         CumulativeBinomialDistribution(Real p, BigNatural n);
         // function
         Real operator()(BigNatural k) const {

@@ -42,7 +42,6 @@ namespace QuantLib {
     namespace detail {
         // havent figured out how to do this in-place
         struct multiplyV {
-            typedef std::vector<Real> result_type;
             std::vector<Real> operator()(Real d, std::vector<Real> v) 
             {
                 std::transform(v.begin(), v.end(), v.begin(), 

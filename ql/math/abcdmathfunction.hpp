@@ -35,9 +35,6 @@ namespace QuantLib {
     class AbcdMathFunction {
 
       public:
-        typedef Time argument_type;
-        typedef Real result_type;
-
         AbcdMathFunction(Real a = 0.002,
                          Real b = 0.001, 
                          Real c = 0.16,

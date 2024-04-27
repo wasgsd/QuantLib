@@ -35,9 +35,6 @@ namespace QuantLib {
     */
     class ErrorFunction {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         ErrorFunction() = default;
         // function
         Real operator()(Real x) const;

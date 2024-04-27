@@ -71,8 +71,6 @@ namespace QuantLib {
         };
         ext::shared_ptr<Impl> impl_;
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
         //! basic template implementation
         template <class I1, class I2>
         class templateImpl : public Impl {

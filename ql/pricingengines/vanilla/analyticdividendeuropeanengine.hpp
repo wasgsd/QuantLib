@@ -24,7 +24,7 @@
 #ifndef quantlib_analytic_dividend_european_engine_hpp
 #define quantlib_analytic_dividend_european_engine_hpp
 
-#include <ql/instruments/dividendvanillaoption.hpp>
+#include <ql/instruments/vanillaoption.hpp>
 #include <ql/processes/blackscholesprocess.hpp>
 
 namespace QuantLib {
@@ -35,14 +35,15 @@ namespace QuantLib {
         \test the correctness of the returned greeks is tested by
               reproducing numerical derivatives.
     */
-    class AnalyticDividendEuropeanEngine
-        : public DividendVanillaOption::engine {
+    class AnalyticDividendEuropeanEngine : public VanillaOption::engine {
       public:
-        AnalyticDividendEuropeanEngine(ext::shared_ptr<GeneralizedBlackScholesProcess>);
-        void calculate() const override;
+        AnalyticDividendEuropeanEngine(ext::shared_ptr<GeneralizedBlackScholesProcess> process,
+                                       DividendSchedule dividends);
 
+        void calculate() const override;
       private:
         ext::shared_ptr<GeneralizedBlackScholesProcess> process_;
+        DividendSchedule dividends_;
     };
 
 }

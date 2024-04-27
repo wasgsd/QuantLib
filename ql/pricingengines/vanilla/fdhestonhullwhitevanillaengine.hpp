@@ -18,13 +18,13 @@
 */
 
 /*! \file fdhestonhullwhitevanillaengine.hpp
-    \brief Finite-Differences Heston Hull-White vanilla option engine
+    \brief Finite-differences Heston Hull-White vanilla option engine
 */
 
 #ifndef quantlib_fd_heston_hull_white_vanilla_engine_hpp
 #define quantlib_fd_heston_hull_white_vanilla_engine_hpp
 
-#include <ql/instruments/dividendvanillaoption.hpp>
+#include <ql/instruments/vanillaoption.hpp>
 #include <ql/models/equity/hestonmodel.hpp>
 #include <ql/processes/hullwhiteprocess.hpp>
 #include <ql/pricingengines/genericmodelengine.hpp>
@@ -33,8 +33,7 @@
 
 namespace QuantLib {
 
-    //! Finite-Differences Heston Hull-White Vanilla Option engine
-
+    //! Finite-differences Heston Hull-White vanilla option engine
     /*! \ingroup vanillaengines
 
         \test the correctness of the returned value is tested by
@@ -43,13 +42,25 @@ namespace QuantLib {
     */
     class FdHestonHullWhiteVanillaEngine
         : public GenericModelEngine<HestonModel,
-                                    DividendVanillaOption::arguments,
-                                    DividendVanillaOption::results> {
+                                    VanillaOption::arguments,
+                                    VanillaOption::results> {
       public:
-        // Constructor
         FdHestonHullWhiteVanillaEngine(
             const ext::shared_ptr<HestonModel>& model,
             ext::shared_ptr<HullWhiteProcess> hwProcess,
+            Real corrEquityShortRate,
+            Size tGrid = 50,
+            Size xGrid = 100,
+            Size vGrid = 40,
+            Size rGrid = 20,
+            Size dampingSteps = 0,
+            bool controlVariate = true,
+            const FdmSchemeDesc& schemeDesc = FdmSchemeDesc::Hundsdorfer());
+
+        FdHestonHullWhiteVanillaEngine(
+            const ext::shared_ptr<HestonModel>& model,
+            ext::shared_ptr<HullWhiteProcess> hwProcess,
+            DividendSchedule dividends,
             Real corrEquityShortRate,
             Size tGrid = 50,
             Size xGrid = 100,
@@ -67,6 +78,7 @@ namespace QuantLib {
         
       private:
         const ext::shared_ptr<HullWhiteProcess> hwProcess_;
+        DividendSchedule dividends_;
         const Real corrEquityShortRate_;
         const Size tGrid_, xGrid_, vGrid_, rGrid_;
         const Size dampingSteps_;
@@ -74,9 +86,11 @@ namespace QuantLib {
         const bool controlVariate_;
         
         std::vector<Real> strikes_;
-        mutable std::vector<std::pair<DividendVanillaOption::arguments,
-                                      DividendVanillaOption::results> >
+        mutable std::vector<std::pair<VanillaOption::arguments,
+                                      VanillaOption::results> >
                                                             cachedArgs2results_;
     };
+
 }
+
 #endif

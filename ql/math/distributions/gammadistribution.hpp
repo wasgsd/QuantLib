@@ -32,9 +32,6 @@ namespace QuantLib {
 
     class CumulativeGammaDistribution {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         CumulativeGammaDistribution(Real a) : a_(a) {
             QL_REQUIRE(a>0.0, "invalid parameter for gamma distribution");
         }
@@ -58,9 +55,6 @@ namespace QuantLib {
     */
     class GammaFunction {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         Real value(Real x) const;
         Real logValue(Real x) const;
       private:

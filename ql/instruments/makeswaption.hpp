@@ -27,6 +27,7 @@
 
 #include <ql/time/businessdayconvention.hpp>
 #include <ql/instruments/swaption.hpp>
+#include <ql/optional.hpp>
 
 namespace QuantLib {
 
@@ -60,6 +61,8 @@ namespace QuantLib {
         MakeSwaption& withOptionConvention(BusinessDayConvention bdc);
         MakeSwaption& withExerciseDate(const Date&);
         MakeSwaption& withUnderlyingType(Swap::Type type);
+        MakeSwaption& withIndexedCoupons(const ext::optional<bool>& b = true);
+        MakeSwaption& withAtParCoupons(bool b = true);
 
         MakeSwaption& withPricingEngine(
                               const ext::shared_ptr<PricingEngine>& engine);
@@ -67,7 +70,7 @@ namespace QuantLib {
         ext::shared_ptr<SwapIndex> swapIndex_;
         Settlement::Type delivery_;
         Settlement::Method settlementMethod_;
-        mutable ext::shared_ptr<VanillaSwap> underlyingSwap_;
+        mutable ext::shared_ptr<FixedVsFloatingSwap> underlyingSwap_;
 
         Period optionTenor_;
         BusinessDayConvention optionConvention_;
@@ -78,6 +81,7 @@ namespace QuantLib {
         Rate strike_;
         Swap::Type underlyingType_;
         Real nominal_;
+        ext::optional<bool> useIndexedCoupons_;
 
         ext::shared_ptr<PricingEngine> engine_;
     };

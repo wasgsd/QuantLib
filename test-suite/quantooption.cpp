@@ -21,7 +21,7 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include "quantooption.hpp"
+#include "toplevelfixture.hpp"
 #include "utilities.hpp"
 #include <ql/time/daycounters/actual360.hpp>
 #include <ql/instruments/quantovanillaoption.hpp>
@@ -32,7 +32,7 @@
 #include <ql/pricingengines/vanilla/fdblackscholesvanillaengine.hpp>
 #include <ql/pricingengines/vanilla/fdhestonvanillaengine.hpp>
 #include <ql/pricingengines/barrier/analyticbarrierengine.hpp>
-#include <ql/experimental/barrieroption/analyticdoublebarrierengine.hpp>
+#include <ql/pricingengines/barrier/analyticdoublebarrierengine.hpp>
 #include <ql/pricingengines/quanto/quantoengine.hpp>
 #include <ql/pricingengines/forward/forwardperformanceengine.hpp>
 #include <ql/termstructures/yield/flatforward.hpp>
@@ -45,6 +45,10 @@
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
+
+BOOST_FIXTURE_TEST_SUITE(QuantLibTests, TopLevelFixture)
+
+BOOST_AUTO_TEST_SUITE(QuantoOptionTests)
 
 #undef QUANTO_REPORT_FAILURE
 #define QUANTO_REPORT_FAILURE(greekName, payoff, exercise, s, q, r, \
@@ -148,83 +152,78 @@ using namespace boost::unit_test_framework;
                << "    error:            " << error << "\n" \
                << "    tolerance:        " << tolerance);
 
-namespace {
+struct QuantoOptionData {
+    Option::Type type;
+    Real strike;
+    Real s;          // spot
+    Rate q;          // dividend
+    Rate r;          // risk-free rate
+    Time t;          // time to maturity
+    Volatility v;    // volatility
+    Rate fxr;        // fx risk-free rate
+    Volatility fxv;  // fx volatility
+    Real corr;       // correlation
+    Real result;     // expected result
+    Real tol;        // tolerance
+};
 
-    struct QuantoOptionData {
-        Option::Type type;
-        Real strike;
-        Real s;          // spot
-        Rate q;          // dividend
-        Rate r;          // risk-free rate
-        Time t;          // time to maturity
-        Volatility v;    // volatility
-        Rate fxr;        // fx risk-free rate
-        Volatility fxv;  // fx volatility
-        Real corr;       // correlation
-        Real result;     // expected result
-        Real tol;        // tolerance
-    };
+struct QuantoForwardOptionData {
+    Option::Type type;
+    Real moneyness;
+    Real s;          // spot
+    Rate q;          // dividend
+    Rate r;          // risk-free rate
+    Time start;      // time to reset
+    Time t;          // time to maturity
+    Volatility v;    // volatility
+    Rate fxr;        // fx risk-free rate
+    Volatility fxv;  // fx volatility
+    Real corr;       // correlation
+    Real result;     // expected result
+    Real tol;        // tolerance
+};
 
-    struct QuantoForwardOptionData {
-        Option::Type type;
-        Real moneyness;
-        Real s;          // spot
-        Rate q;          // dividend
-        Rate r;          // risk-free rate
-        Time start;      // time to reset
-        Time t;          // time to maturity
-        Volatility v;    // volatility
-        Rate fxr;        // fx risk-free rate
-        Volatility fxv;  // fx volatility
-        Real corr;       // correlation
-        Real result;     // expected result
-        Real tol;        // tolerance
-    };
+struct QuantoBarrierOptionData {
+    Barrier::Type barrierType;
+    Real barrier;
+    Real rebate;
+    Option::Type type;
+    Real s;          // spot
+    Real strike;
+    Rate q;          // dividend
+    Rate r;          // risk-free rate
+    Time t;          // time to maturity
+    Volatility v;    // volatility
+    Rate fxr;        // fx risk-free rate
+    Volatility fxv;  // fx volatility
+    Real corr;       // correlation
+    Real result;     // expected result
+    Real tol;        // tolerance
+};
 
-    struct QuantoBarrierOptionData {
-        Barrier::Type barrierType;
-        Real barrier;
-        Real rebate;
-        Option::Type type;
-        Real s;          // spot
-        Real strike;
-        Rate q;          // dividend
-        Rate r;          // risk-free rate
-        Time t;          // time to maturity
-        Volatility v;    // volatility
-        Rate fxr;        // fx risk-free rate
-        Volatility fxv;  // fx volatility
-        Real corr;       // correlation
-        Real result;     // expected result
-        Real tol;        // tolerance
-    };
-
-    struct QuantoDoubleBarrierOptionData {
-        DoubleBarrier::Type barrierType;
-        Real barrier_lo;
-        Real barrier_hi;
-        Real rebate;
-        Option::Type type;
-        Real s;          // spot
-        Real strike;
-        Rate q;          // dividend
-        Rate r;          // risk-free rate
-        Time t;          // time to maturity
-        Volatility v;    // volatility
-        Rate fxr;        // fx risk-free rate
-        Volatility fxv;  // fx volatility
-        Real corr;       // correlation
-        Real result;     // expected result
-        Real tol;        // tolerance
-    };
-}
+struct QuantoDoubleBarrierOptionData {
+    DoubleBarrier::Type barrierType;
+    Real barrier_lo;
+    Real barrier_hi;
+    Real rebate;
+    Option::Type type;
+    Real s;          // spot
+    Real strike;
+    Rate q;          // dividend
+    Rate r;          // risk-free rate
+    Time t;          // time to maturity
+    Volatility v;    // volatility
+    Rate fxr;        // fx risk-free rate
+    Volatility fxv;  // fx volatility
+    Real corr;       // correlation
+    Real result;     // expected result
+    Real tol;        // tolerance
+};
 
 
-void QuantoOptionTest::testValues() {
+BOOST_AUTO_TEST_CASE(testValues) {
 
     BOOST_TEST_MESSAGE("Testing quanto option values...");
-
-    SavedSettings backup;
 
     /* The data below are from
        from "Option pricing formulas", E.G. Haug, McGraw-Hill 1998
@@ -293,12 +292,9 @@ void QuantoOptionTest::testValues() {
     }
 }
 
-
-void QuantoOptionTest::testGreeks() {
+BOOST_AUTO_TEST_CASE(testGreeks) {
 
     BOOST_TEST_MESSAGE("Testing quanto option greeks...");
-
-    SavedSettings backup;
 
     std::map<std::string,Real> calculated, expected, tolerance;
     tolerance["delta"]   = 1.0e-5;
@@ -491,13 +487,9 @@ void QuantoOptionTest::testGreeks() {
     }
 }
 
-
-
-void QuantoOptionTest::testForwardValues() {
+BOOST_AUTO_TEST_CASE(testForwardValues) {
 
     BOOST_TEST_MESSAGE("Testing quanto-forward option values...");
-
-    SavedSettings backup;
 
     QuantoForwardOptionData values[] = {
         //   type, moneyness,  spot,  div, risk-free rate, reset, maturity,  vol, fx risk-free rate, fx vol, corr,     result, tol
@@ -569,12 +561,9 @@ void QuantoOptionTest::testForwardValues() {
     }
 }
 
-
-void QuantoOptionTest::testForwardGreeks() {
+BOOST_AUTO_TEST_CASE(testForwardGreeks) {
 
     BOOST_TEST_MESSAGE("Testing quanto-forward option greeks...");
-
-    SavedSettings backup;
 
     std::map<std::string,Real> calculated, expected, tolerance;
     tolerance["delta"]   = 1.0e-5;
@@ -781,12 +770,9 @@ void QuantoOptionTest::testForwardGreeks() {
     }
 }
 
-
-void QuantoOptionTest::testForwardPerformanceValues() {
+BOOST_AUTO_TEST_CASE(testForwardPerformanceValues) {
 
     BOOST_TEST_MESSAGE("Testing quanto-forward-performance option values...");
-
-    SavedSettings backup;
 
     QuantoForwardOptionData values[] = {
         //   type, moneyness,  spot,  div, risk-free rate, reset, maturity,  vol, fx risk-free rate, fx vol, corr,     result, tol
@@ -862,11 +848,9 @@ void QuantoOptionTest::testForwardPerformanceValues() {
     }
 }
 
-void QuantoOptionTest::testBarrierValues()  {
+BOOST_AUTO_TEST_CASE(testBarrierValues)  {
 
     BOOST_TEST_MESSAGE("Testing quanto-barrier option values...");
-
-    SavedSettings backup;
 
     QuantoBarrierOptionData values[] = {
          // TODO:  Bench results against an existing prop calculator
@@ -942,88 +926,9 @@ void QuantoOptionTest::testBarrierValues()  {
     }
 }
 
-void QuantoOptionTest::testDoubleBarrierValues()  {
-
-    BOOST_TEST_MESSAGE("Testing quanto-double-barrier option values...");
-
-    SavedSettings backup;
-
-    QuantoDoubleBarrierOptionData values[] = {
-         // barrierType,           bar.lo, bar.hi, rebate,         type, spot,  strk,    q,   r,    T,  vol, fx rate, fx vol, corr, result, tol
-        { DoubleBarrier::KnockOut,   50.0,  150.0,      0, Option::Call,  100, 100.0, 0.00, 0.1, 0.25, 0.15,    0.05,    0.2,  0.3,  3.4623, 1.0e-4},
-        { DoubleBarrier::KnockOut,   90.0,  110.0,      0, Option::Call,  100, 100.0, 0.00, 0.1, 0.50, 0.15,    0.05,    0.2,  0.3,  0.5236, 1.0e-4},
-        { DoubleBarrier::KnockOut,   90.0,  110.0,      0, Option::Put,   100, 100.0, 0.00, 0.1, 0.25, 0.15,    0.05,    0.2,  0.3,  1.1320, 1.0e-4},
-        { DoubleBarrier::KnockIn,    80.0,  120.0,      0, Option::Call,  100, 102.0, 0.00, 0.1, 0.25, 0.25,    0.05,    0.2,  0.3,  2.6313, 1.0e-4},
-        { DoubleBarrier::KnockIn,    80.0,  120.0,      0, Option::Call,  100, 102.0, 0.00, 0.1, 0.50, 0.15,    0.05,    0.2,  0.3,  1.9305, 1.0e-4},
-    };
-
-    DayCounter dc = Actual360();
-    Date today = Date::todaysDate();
-
-    ext::shared_ptr<SimpleQuote> spot(new SimpleQuote(0.0));
-    ext::shared_ptr<SimpleQuote> qRate(new SimpleQuote(0.0));
-    Handle<YieldTermStructure> qTS(flatRate(today, qRate, dc));
-    ext::shared_ptr<SimpleQuote> rRate(new SimpleQuote(0.0));
-    Handle<YieldTermStructure> rTS(flatRate(today, rRate, dc));
-    ext::shared_ptr<SimpleQuote> vol(new SimpleQuote(0.0));
-    Handle<BlackVolTermStructure> volTS(flatVol(today, vol, dc));
-
-    ext::shared_ptr<SimpleQuote> fxRate(new SimpleQuote(0.0));
-    Handle<YieldTermStructure> fxrTS(flatRate(today, fxRate, dc));
-    ext::shared_ptr<SimpleQuote> fxVol(new SimpleQuote(0.0));
-    Handle<BlackVolTermStructure> fxVolTS(flatVol(today, fxVol, dc));
-    ext::shared_ptr<SimpleQuote> correlation(new SimpleQuote(0.0));
-
-    ext::shared_ptr<BlackScholesMertonProcess> stochProcess(
-         new BlackScholesMertonProcess(Handle<Quote>(spot),
-                                       Handle<YieldTermStructure>(qTS),
-                                       Handle<YieldTermStructure>(rTS),
-                                       Handle<BlackVolTermStructure>(volTS)));
-
-    ext::shared_ptr<PricingEngine> engine(
-        new QuantoEngine<DoubleBarrierOption, AnalyticDoubleBarrierEngine>(
-                                                 stochProcess, fxrTS, fxVolTS,
-                                                 Handle<Quote>(correlation)));
-
-    for (auto& value : values) {
-
-        ext::shared_ptr<StrikedTypePayoff> payoff(new PlainVanillaPayoff(value.type, value.strike));
-
-        Date exDate = today + timeToDays(value.t);
-        ext::shared_ptr<Exercise> exercise(new EuropeanExercise(exDate));
-
-        spot->setValue(value.s);
-        qRate->setValue(value.q);
-        rRate->setValue(value.r);
-        vol->setValue(value.v);
-
-        fxRate->setValue(value.fxr);
-        fxVol->setValue(value.fxv);
-        correlation->setValue(value.corr);
-
-        QuantoDoubleBarrierOption option(value.barrierType, value.barrier_lo, value.barrier_hi,
-                                         value.rebate, payoff, exercise);
-
-        option.setPricingEngine(engine);
-
-        Real calculated = option.NPV();
-        Real error = std::fabs(calculated - value.result);
-        Real tolerance = value.tol;
-
-        if (error>tolerance) {
-            QUANTO_DOUBLE_BARRIER_REPORT_FAILURE(
-                "value", payoff, value.barrierType, value.barrier_lo, value.barrier_hi,
-                value.rebate, exercise, value.s, value.q, value.r, today, value.v, value.fxr,
-                value.fxv, value.corr, value.result, calculated, error, tolerance);
-        }
-    }
-}
-
-void QuantoOptionTest::testFDMQuantoHelper()  {
+BOOST_AUTO_TEST_CASE(testFDMQuantoHelper)  {
 
     BOOST_TEST_MESSAGE("Testing FDM quanto helper...");
-
-    SavedSettings backup;
 
     const DayCounter dc = Actual360();
     const Date today = Date(22, April, 2019);
@@ -1114,11 +1019,9 @@ void QuantoOptionTest::testFDMQuantoHelper()  {
     }
 }
 
-void QuantoOptionTest::testPDEOptionValues()  {
+BOOST_AUTO_TEST_CASE(testPDEOptionValues)  {
 
     BOOST_TEST_MESSAGE("Testing quanto-option values with PDEs...");
-
-    SavedSettings backup;
 
     const DayCounter dc = Actual360();
     const Date today = Date(21, April, 2019);
@@ -1219,11 +1122,9 @@ void QuantoOptionTest::testPDEOptionValues()  {
     }
 }
 
-void QuantoOptionTest::testAmericanQuantoOption()  {
+BOOST_AUTO_TEST_CASE(testAmericanQuantoOption)  {
 
     BOOST_TEST_MESSAGE("Testing American quanto-option values with PDEs...");
-
-    SavedSettings backup;
 
     const DayCounter dc = Actual365Fixed();
     const Date today = Date(21, April, 2019);
@@ -1270,15 +1171,17 @@ void QuantoOptionTest::testAmericanQuantoOption()  {
 
     const Real strike = 105.0;
 
-    DividendVanillaOption option(
+    std::vector<Date> dividendDates = { today + Period(6, Months) };
+    std::vector<Real> dividendAmounts = { 8.0 };
+    auto dividends = DividendVector(dividendDates, dividendAmounts);
+
+    VanillaOption option(
         ext::make_shared<PlainVanillaPayoff>(Option::Call, strike),
-        ext::make_shared<AmericanExercise>(maturity),
-        std::vector<Date>(1, today + Period(6, Months)),
-        std::vector<Real>(1, 8.0));
+        ext::make_shared<AmericanExercise>(maturity));
 
     option.setPricingEngine(
         ext::make_shared<FdBlackScholesVanillaEngine>(
-            bsmProcess, quantoHelper, 100, 400, 1));
+            bsmProcess, dividends, quantoHelper, 100, 400, 1));
 
     const Real tol = 1e-4;
     const Real expected = 8.90611734;
@@ -1293,7 +1196,7 @@ void QuantoOptionTest::testAmericanQuantoOption()  {
 
     option.setPricingEngine(
         ext::make_shared<FdBlackScholesVanillaEngine>(
-            bsmProcess, quantoHelper, 100, 400, 1));
+            bsmProcess, dividends, quantoHelper, 100, 400, 1));
 
     const Real localVolCalculated = option.NPV();
     if (std::fabs(expected - localVolCalculated) > tol) {
@@ -1311,6 +1214,10 @@ void QuantoOptionTest::testAmericanQuantoOption()  {
                     << "\n    calculated Black-Scholes: " << bsCalculated);
     }
 
+    VanillaOption divOption(
+        ext::make_shared<PlainVanillaPayoff>(Option::Call, strike),
+        ext::make_shared<AmericanExercise>(maturity));
+
     const Real v0    = vol*vol;
     const Real kappa = 1.0;
     const Real theta = v0;
@@ -1322,11 +1229,11 @@ void QuantoOptionTest::testAmericanQuantoOption()  {
             ext::make_shared<HestonProcess>(
                 domesticTS, divTS, spot, v0, kappa, theta, sigma, rho));
 
-    option.setPricingEngine(
+    divOption.setPricingEngine(
         ext::make_shared<FdHestonVanillaEngine>(
-            hestonModel, quantoHelper, 100, 400, 3, 1));
+            hestonModel, dividends, quantoHelper, 100, 400, 3, 1));
 
-    const Real hestonCalculated = option.NPV();
+    const Real hestonCalculated = divOption.NPV();
 
     if (std::fabs(expected - hestonCalculated) > tol) {
         BOOST_ERROR("failed to reproduce American quanto option prices "
@@ -1343,12 +1250,12 @@ void QuantoOptionTest::testAmericanQuantoOption()  {
             ext::make_shared<HestonProcess>(
                 domesticTS, divTS, spot, 0.25*v0, kappa, 0.25*theta, sigma, rho));
 
-    option.setPricingEngine(
+    divOption.setPricingEngine(
         ext::make_shared<FdHestonVanillaEngine>(
-            hestonModel05, quantoHelper, 100, 400, 3, 1,
+            hestonModel05, dividends, quantoHelper, 100, 400, 3, 1,
             FdmSchemeDesc::Hundsdorfer(), localConstVol));
 
-    const Real hestoSlvCalculated = option.NPV();
+    const Real hestoSlvCalculated = divOption.NPV();
 
     if (std::fabs(expected - hestoSlvCalculated) > tol) {
         BOOST_ERROR("failed to reproduce American quanto option prices "
@@ -1358,25 +1265,81 @@ void QuantoOptionTest::testAmericanQuantoOption()  {
     }
 }
 
-test_suite* QuantoOptionTest::suite() {
-    auto* suite = BOOST_TEST_SUITE("Quanto option tests");
-    suite->add(QUANTLIB_TEST_CASE(&QuantoOptionTest::testValues));
-    suite->add(QUANTLIB_TEST_CASE(&QuantoOptionTest::testGreeks));
-    suite->add(QUANTLIB_TEST_CASE(&QuantoOptionTest::testForwardValues));
-    suite->add(QUANTLIB_TEST_CASE(&QuantoOptionTest::testForwardGreeks));
-    suite->add(QUANTLIB_TEST_CASE(
-                            &QuantoOptionTest::testForwardPerformanceValues));
-    suite->add(QUANTLIB_TEST_CASE(&QuantoOptionTest::testBarrierValues));
-    suite->add(QUANTLIB_TEST_CASE(&QuantoOptionTest::testFDMQuantoHelper));
-    suite->add(QUANTLIB_TEST_CASE(&QuantoOptionTest::testPDEOptionValues));
+BOOST_AUTO_TEST_CASE(testDoubleBarrierValues)  {
 
-    suite->add(QUANTLIB_TEST_CASE(&QuantoOptionTest::testAmericanQuantoOption));
-    return suite;
+    BOOST_TEST_MESSAGE("Testing quanto-double-barrier option values...");
+
+    QuantoDoubleBarrierOptionData values[] = {
+        // barrierType,           bar.lo, bar.hi, rebate,         type, spot,  strk,    q,   r,    T,  vol, fx rate, fx vol, corr, result, tol
+        { DoubleBarrier::KnockOut,   50.0,  150.0,      0, Option::Call,  100, 100.0, 0.00, 0.1, 0.25, 0.15,    0.05,    0.2,  0.3,  3.4623, 1.0e-4},
+        { DoubleBarrier::KnockOut,   90.0,  110.0,      0, Option::Call,  100, 100.0, 0.00, 0.1, 0.50, 0.15,    0.05,    0.2,  0.3,  0.5236, 1.0e-4},
+        { DoubleBarrier::KnockOut,   90.0,  110.0,      0, Option::Put,   100, 100.0, 0.00, 0.1, 0.25, 0.15,    0.05,    0.2,  0.3,  1.1320, 1.0e-4},
+        { DoubleBarrier::KnockIn,    80.0,  120.0,      0, Option::Call,  100, 102.0, 0.00, 0.1, 0.25, 0.25,    0.05,    0.2,  0.3,  2.6313, 1.0e-4},
+        { DoubleBarrier::KnockIn,    80.0,  120.0,      0, Option::Call,  100, 102.0, 0.00, 0.1, 0.50, 0.15,    0.05,    0.2,  0.3,  1.9305, 1.0e-4},
+    };
+
+    DayCounter dc = Actual360();
+    Date today = Date::todaysDate();
+
+    ext::shared_ptr<SimpleQuote> spot(new SimpleQuote(0.0));
+    ext::shared_ptr<SimpleQuote> qRate(new SimpleQuote(0.0));
+    Handle<YieldTermStructure> qTS(flatRate(today, qRate, dc));
+    ext::shared_ptr<SimpleQuote> rRate(new SimpleQuote(0.0));
+    Handle<YieldTermStructure> rTS(flatRate(today, rRate, dc));
+    ext::shared_ptr<SimpleQuote> vol(new SimpleQuote(0.0));
+    Handle<BlackVolTermStructure> volTS(flatVol(today, vol, dc));
+
+    ext::shared_ptr<SimpleQuote> fxRate(new SimpleQuote(0.0));
+    Handle<YieldTermStructure> fxrTS(flatRate(today, fxRate, dc));
+    ext::shared_ptr<SimpleQuote> fxVol(new SimpleQuote(0.0));
+    Handle<BlackVolTermStructure> fxVolTS(flatVol(today, fxVol, dc));
+    ext::shared_ptr<SimpleQuote> correlation(new SimpleQuote(0.0));
+
+    ext::shared_ptr<BlackScholesMertonProcess> stochProcess(
+        new BlackScholesMertonProcess(Handle<Quote>(spot),
+                                      Handle<YieldTermStructure>(qTS),
+                                      Handle<YieldTermStructure>(rTS),
+                                      Handle<BlackVolTermStructure>(volTS)));
+
+    ext::shared_ptr<PricingEngine> engine(
+        new QuantoEngine<DoubleBarrierOption, AnalyticDoubleBarrierEngine>(
+            stochProcess, fxrTS, fxVolTS,
+            Handle<Quote>(correlation)));
+
+    for (auto& value : values) {
+
+        ext::shared_ptr<StrikedTypePayoff> payoff(new PlainVanillaPayoff(value.type, value.strike));
+
+        Date exDate = today + timeToDays(value.t);
+        ext::shared_ptr<Exercise> exercise(new EuropeanExercise(exDate));
+
+        spot->setValue(value.s);
+        qRate->setValue(value.q);
+        rRate->setValue(value.r);
+        vol->setValue(value.v);
+
+        fxRate->setValue(value.fxr);
+        fxVol->setValue(value.fxv);
+        correlation->setValue(value.corr);
+
+        QuantoDoubleBarrierOption option(value.barrierType, value.barrier_lo, value.barrier_hi,
+                                         value.rebate, payoff, exercise);
+
+        option.setPricingEngine(engine);
+
+        Real calculated = option.NPV();
+        Real error = std::fabs(calculated - value.result);
+        Real tolerance = value.tol;
+
+        if (error>tolerance) {
+            QUANTO_DOUBLE_BARRIER_REPORT_FAILURE(
+                "value", payoff, value.barrierType, value.barrier_lo, value.barrier_hi,
+                value.rebate, exercise, value.s, value.q, value.r, today, value.v, value.fxr,
+                value.fxv, value.corr, value.result, calculated, error, tolerance);
+        }
+    }
 }
 
-test_suite* QuantoOptionTest::experimental() {
-    auto* suite = BOOST_TEST_SUITE("Experimental quanto option tests");
-    suite->add(QUANTLIB_TEST_CASE(&QuantoOptionTest::testDoubleBarrierValues));
-    return suite;
-}
+BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE_END()

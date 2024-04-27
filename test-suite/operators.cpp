@@ -18,7 +18,7 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include "operators.hpp"
+#include "toplevelfixture.hpp"
 #include "utilities.hpp"
 #include <ql/math/distributions/normaldistribution.hpp>
 #include <ql/methods/finitedifferences/dzero.hpp>
@@ -32,8 +32,11 @@
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
+BOOST_FIXTURE_TEST_SUITE(QuantLibTests, TopLevelFixture)
 
-void OperatorTest::testTridiagonal() {
+BOOST_AUTO_TEST_SUITE(OperatorTests)
+
+BOOST_AUTO_TEST_CASE(testTridiagonal) {
 
     BOOST_TEST_MESSAGE("Testing tridiagonal operator...");
 
@@ -115,7 +118,7 @@ void OperatorTest::testTridiagonal() {
                    "\n                  tolerance: " << tolerance);
 }
 
-void OperatorTest::testConsistency() {
+BOOST_AUTO_TEST_CASE(testConsistency) {
 
     BOOST_TEST_MESSAGE("Testing differential operators...");
 
@@ -127,7 +130,6 @@ void OperatorTest::testConsistency() {
     Real xMin = average - 4*sigma,
          xMax = average + 4*sigma;
     Size N = 10001;
-    // FLOATING_POINT_EXCEPTION
     Real h = (xMax-xMin)/(N-1);
 
     Array x(N), y(N), yi(N), yd(N), temp(N), diff(N);
@@ -163,7 +165,7 @@ void OperatorTest::testConsistency() {
     }
 }
 
-void OperatorTest::testBSMOperatorConsistency() {
+BOOST_AUTO_TEST_CASE(testBSMOperatorConsistency) {
     BOOST_TEST_MESSAGE("Testing consistency of BSM operators...");
 
     Array grid(10);
@@ -172,7 +174,6 @@ void OperatorTest::testBSMOperatorConsistency() {
     Size i;
     for (i = 0; i < grid.size(); i++) {
         grid[i] = price;
-        // FLOATING_POINT_EXCEPTION
         price *= factor;
     }
     Real dx = std::log(factor);
@@ -197,7 +198,7 @@ void OperatorTest::testBSMOperatorConsistency() {
                                        Handle<YieldTermStructure>(qTS),
                                        Handle<YieldTermStructure>(rTS),
                                        Handle<BlackVolTermStructure>(volTS)));
-    BSMTermOperator op2(grid, stochProcess, residualTime);
+    PdeOperator<PdeBSM> op2(grid, stochProcess, residualTime);
 
     Real tolerance = 1.0e-6;
 
@@ -223,14 +224,6 @@ void OperatorTest::testBSMOperatorConsistency() {
     }
 }
 
+BOOST_AUTO_TEST_SUITE_END()
 
-test_suite* OperatorTest::suite() {
-    auto* suite = BOOST_TEST_SUITE("Operator tests");
-    suite->add(QUANTLIB_TEST_CASE(&OperatorTest::testTridiagonal));
-    // FLOATING_POINT_EXCEPTION
-    suite->add(QUANTLIB_TEST_CASE(&OperatorTest::testConsistency));
-    // FLOATING_POINT_EXCEPTION
-    suite->add(QUANTLIB_TEST_CASE(&OperatorTest::testBSMOperatorConsistency));
-    return suite;
-}
-
+BOOST_AUTO_TEST_SUITE_END()

@@ -3,6 +3,7 @@
 /*
  Copyright (C) 2004 FIMAT Group
  Copyright (C) 2005, 2006, 2007, 2008, 2009, 2011 StatPro Italia srl
+ Copyright (C) 2023 Skandinaviska Enskilda Banken AB (publ)
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -31,7 +32,7 @@ namespace QuantLib {
 
     //! Taiwanese calendars
     /*! Holidays for the Taiwan stock exchange
-        (data from <http://www.tse.com.tw/en/trading/trading_days.php>):
+        (data from <https://www.twse.com.tw/en/trading/holiday.html>):
         <ul>
         <li>Saturdays</li>
         <li>Sundays</li>
@@ -42,7 +43,7 @@ namespace QuantLib {
         </ul>
 
         Other holidays for which no rule is given
-        (data available for 2002-2014 only:)
+        (data available for 2002-2024 only:)
         <ul>
         <li>Chinese Lunar New Year</li>
         <li>Tomb Sweeping Day</li>
@@ -54,7 +55,7 @@ namespace QuantLib {
     */
     class Taiwan : public Calendar {
       private:
-        class TsecImpl : public Calendar::Impl {
+        class TsecImpl final : public Calendar::Impl {
           public:
             std::string name() const override { return "Taiwan stock exchange"; }
             bool isWeekend(Weekday) const override;

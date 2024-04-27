@@ -40,9 +40,6 @@ namespace QuantLib {
     */
     class NumericalDifferentiation {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         enum Scheme { Central, Backward, Forward };
 
         NumericalDifferentiation(ext::function<Real(Real)> f,

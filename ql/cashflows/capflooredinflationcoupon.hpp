@@ -64,7 +64,7 @@ namespace QuantLib {
         \f]
      */
     class CappedFlooredYoYInflationCoupon : public YoYInflationCoupon {
-    public:
+      public:
         // we may watch an underlying coupon ...
         CappedFlooredYoYInflationCoupon(
                 const ext::shared_ptr<YoYInflationCoupon>& underlying,
@@ -117,19 +117,22 @@ namespace QuantLib {
         void accept(AcyclicVisitor& v) override;
         //@}
 
+        //! this returns the expected rate before cap and floor are applied
+        Rate underlyingRate() const;
+
         bool isCapped() const { return isCapped_; }
         bool isFloored() const { return isFloored_; }
 
         void setPricer(const ext::shared_ptr<YoYInflationCouponPricer>&);
 
-    protected:
-        virtual void setCommon(Rate cap, Rate floor);
-
+      protected:
         // data, we only use underlying_ if it was constructed that way,
         // generally we use the shared_ptr conversion to boolean to test
         ext::shared_ptr<YoYInflationCoupon> underlying_;
         bool isFloored_, isCapped_;
         Rate cap_, floor_;
+      private:
+        void setCommon(Rate cap, Rate floor);
     };
 
 }

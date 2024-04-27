@@ -41,9 +41,6 @@ namespace QuantLib {
 
     class StochasticCollocationInvCDF {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         StochasticCollocationInvCDF(
             const ext::function<Real(Real)>& invCDF,
             Size lagrangeOrder,

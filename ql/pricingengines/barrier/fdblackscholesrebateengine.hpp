@@ -20,7 +20,7 @@
 */
 
 /*! \file fdblackscholesrebateengine.hpp
-    \brief Finite-Differences Black Scholes barrier option rebate helper engine
+    \brief Finite-differences Black/Scholes barrier option rebate helper engine
 */
 
 #ifndef quantlib_fd_black_scholes_rebate_engine_hpp
@@ -28,20 +28,26 @@
 
 #include <ql/processes/blackscholesprocess.hpp>
 #include <ql/methods/finitedifferences/solvers/fdmbackwardsolver.hpp>
-#include <ql/instruments/dividendbarrieroption.hpp>
+#include <ql/instruments/barrieroption.hpp>
 
 namespace QuantLib {
 
-    //! Finite-Differences Black Scholes barrier option rebate helper engine
-
-    /*!
-        \ingroup barrierengines
-    */
-    class FdBlackScholesRebateEngine : public DividendBarrierOption::engine {
+    //! Finite-differences Black/Scholes barrier-option rebate helper engine
+    /*! \ingroup barrierengines */
+    class FdBlackScholesRebateEngine : public BarrierOption::engine {
       public:
-        // Constructor
         explicit FdBlackScholesRebateEngine(
             ext::shared_ptr<GeneralizedBlackScholesProcess> process,
+            Size tGrid = 100,
+            Size xGrid = 100,
+            Size dampingSteps = 0,
+            const FdmSchemeDesc& schemeDesc = FdmSchemeDesc::Douglas(),
+            bool localVol = false,
+            Real illegalLocalVolOverwrite = -Null<Real>());
+
+        explicit FdBlackScholesRebateEngine(
+            ext::shared_ptr<GeneralizedBlackScholesProcess> process,
+            DividendSchedule dividends,
             Size tGrid = 100,
             Size xGrid = 100,
             Size dampingSteps = 0,
@@ -52,14 +58,14 @@ namespace QuantLib {
         void calculate() const override;
 
       private:
-        const ext::shared_ptr<GeneralizedBlackScholesProcess> process_;
-        const Size tGrid_, xGrid_, dampingSteps_;
-        const FdmSchemeDesc schemeDesc_;
-        const bool localVol_;
-        const Real illegalLocalVolOverwrite_;
-};
-
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process_;
+        DividendSchedule dividends_;
+        Size tGrid_, xGrid_, dampingSteps_;
+        FdmSchemeDesc schemeDesc_;
+        bool localVol_;
+        Real illegalLocalVolOverwrite_;
+    };
 
 }
 
-#endif /*quantlib_fd_black_scholes_rebate_engine_hpp*/
+#endif

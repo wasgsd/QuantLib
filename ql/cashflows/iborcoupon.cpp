@@ -27,21 +27,10 @@
 #include <ql/cashflows/iborcoupon.hpp>
 #include <ql/indexes/interestrateindex.hpp>
 #include <ql/termstructures/yieldtermstructure.hpp>
+#include <ql/optional.hpp>
 #include <utility>
 
 namespace QuantLib {
-
-    void IborCoupon::createAtParCoupons() {
-        Settings::instance().createAtParCoupons();
-    }
-
-    void IborCoupon::createIndexedCoupons() {
-        Settings::instance().createIndexedCoupons();
-    }
-
-    bool IborCoupon::usingAtParCoupons() {
-        return Settings::instance().usingAtParCoupons();
-    }
 
     IborCoupon::IborCoupon(const Date& paymentDate,
                            Real nominal,
@@ -61,7 +50,7 @@ namespace QuantLib {
                          refPeriodStart, refPeriodEnd,
                          dayCounter, isInArrears, exCouponDate),
       iborIndex_(iborIndex) {
-        fixingDate_ = fixingDate();
+        fixingDate_ = FloatingRateCoupon::fixingDate();
     }
 
     void IborCoupon::initializeCachedData() const {
@@ -93,6 +82,10 @@ namespace QuantLib {
     Time IborCoupon::spanningTimeIndexMaturity() const {
         initializeCachedData();
         return spanningTimeIndexMaturity_;
+    }
+
+    Date IborCoupon::fixingDate() const {
+        return fixingDate_;
     }
 
     Rate IborCoupon::indexFixing() const {
@@ -186,7 +179,7 @@ namespace QuantLib {
         return *this;
     }
 
-    IborLeg& IborLeg::withPaymentLag(Natural lag) {
+    IborLeg& IborLeg::withPaymentLag(Integer lag) {
         paymentLag_ = lag;
         return *this;
     }
@@ -267,7 +260,7 @@ namespace QuantLib {
         return *this;
 	}
 
-    IborLeg& IborLeg::withIndexedCoupons(boost::optional<bool> b) {
+    IborLeg& IborLeg::withIndexedCoupons(ext::optional<bool> b) {
         useIndexedCoupons_ = b;
         return *this;
     }

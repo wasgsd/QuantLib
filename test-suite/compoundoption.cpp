@@ -17,10 +17,10 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include "compoundoption.hpp"
+#include "toplevelfixture.hpp"
 #include "utilities.hpp"
-#include <ql/experimental/exoticoptions/compoundoption.hpp>
-#include <ql/experimental/exoticoptions/analyticcompoundoptionengine.hpp>
+#include <ql/instruments/compoundoption.hpp>
+#include <ql/pricingengines/exotic/analyticcompoundoptionengine.hpp>
 #include <ql/instruments/europeanoption.hpp>
 #include <ql/pricingengines/vanilla/analyticeuropeanengine.hpp>
 #include <ql/time/calendars/target.hpp>
@@ -33,6 +33,10 @@
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
+
+BOOST_FIXTURE_TEST_SUITE(QuantLibTests, TopLevelFixture)
+
+BOOST_AUTO_TEST_SUITE(CompoundOptionTests)
 
 #undef REPORT_FAILURE
 #define REPORT_FAILURE(greekName, payoffM, payoffD, exerciseM,    \
@@ -55,35 +59,29 @@ using namespace boost::unit_test_framework;
                "\nerror:                " << error << \
                "\ntolerance:            " << tolerance);
 
-namespace compound_option_test {
-
-    struct CompoundOptionData {
-        Option::Type typeMother;
-        Option::Type typeDaughter;
-        Real strikeMother;
-        Real strikeDaughter;
-        Real s;        // spot
-        Rate q;        // dividend
-        Rate r;        // risk-free rate
-        Time tMother;  // time to maturity
-        Time tDaughter;// time to maturity
-        Volatility v;  // volatility
-        Real npv;   // expected result
-        Real tol;      // tolerance
-        Real delta;
-        Real gamma;
-        Real vega;
-        Real theta;
-    };
-
-}
+struct CompoundOptionData {
+    Option::Type typeMother;
+    Option::Type typeDaughter;
+    Real strikeMother;
+    Real strikeDaughter;
+    Real s;        // spot
+    Rate q;        // dividend
+    Rate r;        // risk-free rate
+    Time tMother;  // time to maturity
+    Time tDaughter;// time to maturity
+    Volatility v;  // volatility
+    Real npv;   // expected result
+    Real tol;      // tolerance
+    Real delta;
+    Real gamma;
+    Real vega;
+    Real theta;
+};
 
 
-void CompoundOptionTest::testPutCallParity(){
+BOOST_AUTO_TEST_CASE(testPutCallParity){
 
     BOOST_TEST_MESSAGE("Testing compound-option put-call parity...");
-
-    using namespace compound_option_test;
 
     // Test Put Call Parity for compound options.
     // Formula taken from: "Foreign Exchange Risk", Wystup, Risk 2002
@@ -104,8 +102,6 @@ void CompoundOptionTest::testPutCallParity(){
         { Option::Call, Option::Call,  0.02,           1.6   ,      1.6,    0.013, 0.022,  0.45,     0.5,        0.17},
         { Option::Call, Option::Put,  0.02,           1.6   ,      1.6,     0.013, 0.022,  0.45,     0.5,         0.17},
     };
-
-    SavedSettings backup;
 
     Calendar calendar = TARGET();
 
@@ -197,11 +193,9 @@ void CompoundOptionTest::testPutCallParity(){
     }
 }
 
-void CompoundOptionTest::testValues(){
+BOOST_AUTO_TEST_CASE(testValues){
 
     BOOST_TEST_MESSAGE("Testing compound-option values and greeks...");
-
-    using namespace compound_option_test;
 
     CompoundOptionData values[] = {
         // type Mother, typeDaughter, strike Mother, strike Daughter,  spot,    q,    r,    t Mother, t Daughter,  vol,   value,    tol, delta, gamma, vega, theta
@@ -238,8 +232,6 @@ void CompoundOptionTest::testValues(){
         { Option::Put, Option::Call,  0.02,           1.6   ,      1.6,  0.013, 0.022,  0.45,     0.5,         0.17,  0.0081,   1.0e-3,  -0.0417,0.0761, -0.0045, -0.0020},
         { Option::Put, Option::Put,  0.02,           1.6   ,      1.6,   0.013, 0.022,  0.45,     0.5,         0.17,  0.0078,   1.0e-3,   0.0413,0.0326, -0.0133, -0.0016}
     };
-
-    SavedSettings backup;
 
     Calendar calendar = TARGET();
 
@@ -349,14 +341,6 @@ void CompoundOptionTest::testValues(){
     }
 }
 
+BOOST_AUTO_TEST_SUITE_END()
 
-test_suite* CompoundOptionTest::suite() {
-    auto* suite = BOOST_TEST_SUITE("Compound option tests");
-
-    suite->add(QUANTLIB_TEST_CASE(&CompoundOptionTest::testValues));
-    suite->add(QUANTLIB_TEST_CASE(&CompoundOptionTest::testPutCallParity));
-
-    return suite;
-}
-
-
+BOOST_AUTO_TEST_SUITE_END()

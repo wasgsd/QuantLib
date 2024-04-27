@@ -5,6 +5,7 @@ this_include_HEADERS = \
 	all.hpp \
 	discreteintegrals.hpp \
 	exponentialintegrals.hpp \
+	expsinhintegral.hpp \
 	filonintegral.hpp \
 	gausslaguerrecosinepolynomial.hpp \
 	gausslobattointegral.hpp \
@@ -15,6 +16,7 @@ this_include_HEADERS = \
 	momentbasedgaussianpolynomial.hpp  \
 	segmentintegral.hpp \
 	simpsonintegral.hpp \
+	tanhsinhintegral.hpp \
 	trapezoidintegral.hpp \
 	twodimensionalintegral.hpp
 

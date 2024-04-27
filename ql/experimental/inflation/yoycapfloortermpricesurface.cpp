@@ -22,8 +22,6 @@
 
 namespace QuantLib {
 
-    QL_DEPRECATED_DISABLE_WARNING
-
     YoYCapFloorTermPriceSurface::YoYCapFloorTermPriceSurface(
         Natural fixingDays,
         const Period& lag,
@@ -38,10 +36,10 @@ namespace QuantLib {
         const std::vector<Period>& cfMaturities,
         const Matrix& cPrice,
         const Matrix& fPrice)
-    : InflationTermStructure(0, cal, baseRate, lag, yii->frequency(), yii->interpolated(), dc),
-      fixingDays_(fixingDays), bdc_(bdc), yoyIndex_(yii), nominalTS_(std::move(nominal)),
+    : TermStructure(0, cal, dc),
+      fixingDays_(fixingDays), bdc_(bdc), yoyIndex_(yii), observationLag_(lag), nominalTS_(std::move(nominal)),
       cStrikes_(cStrikes), fStrikes_(fStrikes), cfMaturities_(cfMaturities), cPrice_(cPrice),
-      fPrice_(fPrice) {
+      fPrice_(fPrice), indexIsInterpolated_(yii->interpolated()) {
 
         // data consistency checking, enough data?
         QL_REQUIRE(fStrikes_.size() > 1, "not enough floor strikes");
@@ -102,8 +100,6 @@ namespace QuantLib {
                         "cfStrikes not increasing");
     }
 
-    QL_DEPRECATED_ENABLE_WARNING
-
     Date YoYCapFloorTermPriceSurface::yoyOptionDateFromTenor(const Period& p) const
     {
         return referenceDate() + p;
@@ -131,8 +127,6 @@ namespace QuantLib {
                     bool extrapolate) const {
         return atmYoYRate(yoyOptionDateFromTenor(d), obsLag, extrapolate);
     }
-
-
 
 }
 

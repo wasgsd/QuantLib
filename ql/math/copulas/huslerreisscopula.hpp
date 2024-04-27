@@ -33,10 +33,6 @@ namespace QuantLib {
     //! Husler-Reiss copula
     class HuslerReissCopula {
       public:
-        typedef Real first_argument_type;
-        typedef Real second_argument_type;
-        typedef Real result_type;
-
         HuslerReissCopula(Real theta_);
         Real operator()(Real x, Real y) const;
       private:

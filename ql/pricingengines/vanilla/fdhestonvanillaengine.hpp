@@ -20,13 +20,13 @@
 */
 
 /*! \file fdhestonvanillaengine.hpp
-    \brief Finite-Differences Heston vanilla option engine
+    \brief Finite-differences Heston vanilla option engine
 */
 
 #ifndef quantlib_fd_heston_vanilla_engine_hpp
 #define quantlib_fd_heston_vanilla_engine_hpp
 
-#include <ql/instruments/dividendvanillaoption.hpp>
+#include <ql/instruments/vanillaoption.hpp>
 #include <ql/models/equity/hestonmodel.hpp>
 #include <ql/pricingengines/genericmodelengine.hpp>
 #include <ql/methods/finitedifferences/solvers/fdmsolverdesc.hpp>
@@ -35,32 +35,39 @@
 
 namespace QuantLib {
 
-    //! Finite-Differences Heston Vanilla Option engine
+    class FdmQuantoHelper;
 
+    //! Finite-differences Heston vanilla option engine
     /*! \ingroup vanillaengines
 
         \test the correctness of the returned value is tested by
               reproducing results available in web/literature
               and comparison with Black pricing.
     */
-    class FdmQuantoHelper;
-
     class FdHestonVanillaEngine
         : public GenericModelEngine<HestonModel,
-                                    DividendVanillaOption::arguments,
-                                    DividendVanillaOption::results> {
+                                    VanillaOption::arguments,
+                                    VanillaOption::results> {
       public:
-        // Constructor
-        explicit FdHestonVanillaEngine(
-            const ext::shared_ptr<HestonModel>& model,
-            Size tGrid = 100,
-            Size xGrid = 100,
-            Size vGrid = 50,
-            Size dampingSteps = 0,
-            const FdmSchemeDesc& schemeDesc = FdmSchemeDesc::Hundsdorfer(),
-            ext::shared_ptr<LocalVolTermStructure> leverageFct =
-                ext::shared_ptr<LocalVolTermStructure>(),
-            Real mixingFactor = 1.0);
+        explicit
+        FdHestonVanillaEngine(const ext::shared_ptr<HestonModel>& model,
+                              Size tGrid = 100,
+                              Size xGrid = 100,
+                              Size vGrid = 50,
+                              Size dampingSteps = 0,
+                              const FdmSchemeDesc& schemeDesc = FdmSchemeDesc::Hundsdorfer(),
+                              ext::shared_ptr<LocalVolTermStructure> leverageFct = {},
+                              Real mixingFactor = 1.0);
+
+        FdHestonVanillaEngine(const ext::shared_ptr<HestonModel>& model,
+                              DividendSchedule dividends,
+                              Size tGrid = 100,
+                              Size xGrid = 100,
+                              Size vGrid = 50,
+                              Size dampingSteps = 0,
+                              const FdmSchemeDesc& schemeDesc = FdmSchemeDesc::Hundsdorfer(),
+                              ext::shared_ptr<LocalVolTermStructure> leverageFct = {},
+                              Real mixingFactor = 1.0);
 
         FdHestonVanillaEngine(const ext::shared_ptr<HestonModel>& model,
                               ext::shared_ptr<FdmQuantoHelper> quantoHelper,
@@ -69,8 +76,18 @@ namespace QuantLib {
                               Size vGrid = 50,
                               Size dampingSteps = 0,
                               const FdmSchemeDesc& schemeDesc = FdmSchemeDesc::Hundsdorfer(),
-                              ext::shared_ptr<LocalVolTermStructure> leverageFct =
-                                  ext::shared_ptr<LocalVolTermStructure>(),
+                              ext::shared_ptr<LocalVolTermStructure> leverageFct = {},
+                              Real mixingFactor = 1.0);
+
+        FdHestonVanillaEngine(const ext::shared_ptr<HestonModel>& model,
+                              DividendSchedule dividends,
+                              ext::shared_ptr<FdmQuantoHelper> quantoHelper,
+                              Size tGrid = 100,
+                              Size xGrid = 100,
+                              Size vGrid = 50,
+                              Size dampingSteps = 0,
+                              const FdmSchemeDesc& schemeDesc = FdmSchemeDesc::Hundsdorfer(),
+                              ext::shared_ptr<LocalVolTermStructure> leverageFct = {},
                               Real mixingFactor = 1.0);
 
         void calculate() const override;
@@ -78,11 +95,12 @@ namespace QuantLib {
         // multiple strikes caching engine
         void update() override;
         void enableMultipleStrikesCaching(const std::vector<Real>& strikes);
-        
+
         // helper method for Heston like engines
         FdmSolverDesc getSolverDesc(Real equityScaleFactor) const;
 
       private:
+        DividendSchedule dividends_;
         const Size tGrid_, xGrid_, vGrid_, dampingSteps_;
         const FdmSchemeDesc schemeDesc_;
         const ext::shared_ptr<LocalVolTermStructure> leverageFct_;
@@ -90,8 +108,8 @@ namespace QuantLib {
         const Real mixingFactor_;
 
         std::vector<Real> strikes_;
-        mutable std::vector<std::pair<DividendVanillaOption::arguments,
-                                      DividendVanillaOption::results> >
+        mutable std::vector<std::pair<VanillaOption::arguments,
+                                      VanillaOption::results> >
                                                             cachedArgs2results_;
     };
 
@@ -114,15 +132,21 @@ namespace QuantLib {
         MakeFdHestonVanillaEngine& withLeverageFunction(
             ext::shared_ptr<LocalVolTermStructure>& leverageFct);
 
+        MakeFdHestonVanillaEngine& withCashDividends(
+            const std::vector<Date>& dividendDates,
+            const std::vector<Real>& dividendAmounts);
+
         operator ext::shared_ptr<PricingEngine>() const;
 
       private:
         ext::shared_ptr<HestonModel> hestonModel_;
+        DividendSchedule dividends_;
         Size tGrid_ = 100, xGrid_ = 100, vGrid_ = 50, dampingSteps_ = 0;
         ext::shared_ptr<FdmSchemeDesc> schemeDesc_;
         ext::shared_ptr<LocalVolTermStructure> leverageFct_;
         ext::shared_ptr<FdmQuantoHelper> quantoHelper_;
     };
+
 }
 
 #endif

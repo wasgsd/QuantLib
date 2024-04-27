@@ -19,57 +19,11 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-/*! \file dividendbarrieroption.hpp
-    \brief Barrier option on a single asset with discrete dividends
-*/
-
 #ifndef quantlib_dividend_barrier_option_hpp
 #define quantlib_dividend_barrier_option_hpp
 
-#include <ql/instruments/barrieroption.hpp>
-#include <ql/instruments/dividendschedule.hpp>
-#include <ql/instruments/payoffs.hpp>
+/* Deprecated in version 1.35 */
 
-namespace QuantLib {
-
-    //! Single-asset barrier option with discrete dividends
-    /*! \ingroup instruments */
-    class DividendBarrierOption : public BarrierOption {
-      public:
-        class arguments;
-        class engine;
-        DividendBarrierOption(
-                        Barrier::Type barrierType,
-                        Real barrier,
-                        Real rebate,
-                        const ext::shared_ptr<StrikedTypePayoff>& payoff,
-                        const ext::shared_ptr<Exercise>& exercise,
-                        const std::vector<Date>& dividendDates,
-                        const std::vector<Real>& dividends);
-      protected:
-        void setupArguments(PricingEngine::arguments*) const override;
-
-      private:
-        DividendSchedule cashFlow_;
-    };
-
-
-    //! %Arguments for dividend barrier option calculation
-    class DividendBarrierOption::arguments : public BarrierOption::arguments {
-      public:
-        DividendSchedule cashFlow;
-        arguments() = default;
-        void validate() const override;
-    };
-
-    //! %Dividend-barrier-option %engine base class
-    class DividendBarrierOption::engine
-        : public GenericEngine<DividendBarrierOption::arguments,
-                               DividendBarrierOption::results> {
-      protected:
-        bool triggered(Real underlying) const;
-    };
-
-}
+#pragma message("Warning: this file will disappear in a future release; do not include it.")
 
 #endif

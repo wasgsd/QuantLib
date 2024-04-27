@@ -33,10 +33,6 @@ namespace QuantLib {
     //! Plackett copula
     class PlackettCopula {
       public:
-        typedef Real first_argument_type;
-        typedef Real second_argument_type;
-        typedef Real result_type;
-
         PlackettCopula(Real theta);
         Real operator()(Real x, Real y) const;
       private:

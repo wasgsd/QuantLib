@@ -33,10 +33,6 @@ namespace QuantLib {
     //! Ali-Mikhail-Haq copula
     class AliMikhailHaqCopula {
       public:
-        typedef Real first_argument_type;
-        typedef Real second_argument_type;
-        typedef Real result_type;
-
         AliMikhailHaqCopula(Real theta);
         Real operator()(Real x, Real y) const;
       private:

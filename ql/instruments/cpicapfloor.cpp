@@ -2,6 +2,7 @@
 
 /*
  Copyright (C) 2010, 2011 Chris Kenyon
+ Copyright (C) 2021 Ralf Konrad Eckel
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -33,8 +34,6 @@
 
 namespace QuantLib {
 
-    QL_DEPRECATED_DISABLE_WARNING
-
     CPICapFloor::CPICapFloor(Option::Type type,
                              Real nominal,
                              const Date& startDate, // start date of contract (only)
@@ -45,64 +44,30 @@ namespace QuantLib {
                              Calendar payCalendar,
                              BusinessDayConvention payConvention,
                              Rate strike,
-                             const ext::shared_ptr<ZeroInflationIndex>& infIndex,
-                             const Period& observationLag,
-                             CPI::InterpolationType observationInterpolation)
-    : CPICapFloor(type,
-                  nominal,
-                  startDate,
-                  baseCPI,
-                  maturity,
-                  std::move(fixCalendar),
-                  fixConvention,
-                  std::move(payCalendar),
-                  payConvention,
-                  strike,
-                  Handle<ZeroInflationIndex>(infIndex),
-                  observationLag,
-                  observationInterpolation) {}
-
-    CPICapFloor::CPICapFloor(Option::Type type,
-                             Real nominal,
-                             const Date& startDate, // start date of contract (only)
-                             Real baseCPI,
-                             const Date& maturity, // this is pre-adjustment!
-                             Calendar fixCalendar,
-                             BusinessDayConvention fixConvention,
-                             Calendar payCalendar,
-                             BusinessDayConvention payConvention,
-                             Rate strike,
-                             const Handle<ZeroInflationIndex>& infIndex,
+                             ext::shared_ptr<ZeroInflationIndex>  index,
                              const Period& observationLag,
                              CPI::InterpolationType observationInterpolation)
     : type_(type), nominal_(nominal), startDate_(startDate), baseCPI_(baseCPI), maturity_(maturity),
       fixCalendar_(std::move(fixCalendar)), fixConvention_(fixConvention),
       payCalendar_(std::move(payCalendar)), payConvention_(payConvention), strike_(strike),
-      index_(*infIndex), observationLag_(observationLag),
-      observationInterpolation_(observationInterpolation), infIndex_(infIndex) {
+      index_(std::move(index)), observationLag_(observationLag),
+      observationInterpolation_(observationInterpolation) {
         QL_REQUIRE(index_, "no inflation index passed");
         QL_REQUIRE(fixCalendar_ != Calendar(), "no fixing calendar passed");
         QL_REQUIRE(payCalendar_ != Calendar(), "no payment calendar passed");
 
-        if (observationInterpolation_ == CPI::Flat  ||
-            (observationInterpolation_ == CPI::AsIndex && !index_->interpolated())
-            ) {
+        if (!detail::CPI::isInterpolated(observationInterpolation_)) {
             QL_REQUIRE(observationLag_ >= index_->availabilityLag(),
                        "CPIcapfloor's observationLag must be at least availabilityLag of inflation index: "
                        <<"when the observation is effectively flat"
                        << observationLag_ << " vs " << index_->availabilityLag());
-        }
-        if (observationInterpolation_ == CPI::Linear ||
-            (observationInterpolation_ == CPI::AsIndex && index_->interpolated())
-            ) {
+        } else {
             QL_REQUIRE(observationLag_ > index_->availabilityLag(),
                        "CPIcapfloor's observationLag must be greater than availabilityLag of inflation index: "
                        <<"when the observation is effectively linear"
                        << observationLag_ << " vs " << index_->availabilityLag());
         }
     }
-
-    QL_DEPRECATED_ENABLE_WARNING
 
 
     // when you fix - but remember that there is an observation interpolation factor as well
@@ -140,7 +105,7 @@ namespace QuantLib {
         arguments->maturity = maturity_;
         arguments->fixCalendar = fixCalendar_;
         arguments->fixConvention = fixConvention_;
-        arguments->payCalendar = fixCalendar_;
+        arguments->payCalendar = payCalendar_;
         arguments->payConvention = payConvention_;
         arguments->fixDate = fixingDate();
         arguments->payDate = payDate();
@@ -148,10 +113,6 @@ namespace QuantLib {
         arguments->index = index_;
         arguments->observationLag = observationLag_;
         arguments->observationInterpolation = observationInterpolation_;
-
-        QL_DEPRECATED_DISABLE_WARNING
-        arguments->infIndex = infIndex_;
-        QL_DEPRECATED_ENABLE_WARNING
     }
 
 }

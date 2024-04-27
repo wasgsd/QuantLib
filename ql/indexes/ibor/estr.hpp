@@ -17,7 +17,7 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-/*! \file eonia.hpp
+/*! \file estr.hpp
     \brief %ESTR index
 */
 
@@ -31,8 +31,7 @@ namespace QuantLib {
     //! %ESTR (Euro Short-Term Rate) rate fixed by the ECB.
     class Estr : public OvernightIndex {
       public:
-        explicit Estr(const Handle<YieldTermStructure>& h =
-                      Handle<YieldTermStructure>());
+        explicit Estr(const Handle<YieldTermStructure>& h = {});
     };
 
 }

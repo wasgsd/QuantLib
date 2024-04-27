@@ -35,9 +35,6 @@ namespace QuantLib {
     //! Abstract base class for option payoffs
     class Payoff {
       public:
-        typedef Real argument_type;
-        typedef Real result_type;
-
         virtual ~Payoff() = default;
         //! \name Payoff interface
         //@{

@@ -18,13 +18,13 @@
 */
 
 /*! \file fdcirvanillaengine.hpp
-    \brief Finite-Differences CIR vanilla option engine
+    \brief Finite-differences CIR vanilla option engine
 */
 
 #ifndef quantlib_fd_cir_vanilla_engine_hpp
 #define quantlib_fd_cir_vanilla_engine_hpp
 
-#include <ql/instruments/dividendvanillaoption.hpp>
+#include <ql/instruments/vanillaoption.hpp>
 #include <ql/methods/finitedifferences/solvers/fdmbackwardsolver.hpp>
 #include <ql/methods/finitedifferences/solvers/fdmsolverdesc.hpp>
 #include <ql/models/equity/hestonmodel.hpp>
@@ -34,38 +34,48 @@
 
 namespace QuantLib {
 
-    //! Finite-Differences CIR Vanilla Option engine
+    class FdmQuantoHelper;
 
+    //! Finite-differences CIR vanilla option engine
     /*! \ingroup vanillaengines
 
         \test the engine has been tested to converge among different schemes.
     */
-    class FdmQuantoHelper;
-
-    class FdCIRVanillaEngine : public DividendVanillaOption::engine {
+    class FdCIRVanillaEngine : public VanillaOption::engine {
       public:
-        explicit FdCIRVanillaEngine(ext::shared_ptr<CoxIngersollRossProcess> cirProcess,
-                                    ext::shared_ptr<GeneralizedBlackScholesProcess> bsProcess,
-                                    Size tGrid,
-                                    Size xGrid,
-                                    Size vGrid,
-                                    Size dampingSteps,
-                                    Real rho,
-                                    const FdmSchemeDesc& schemeDesc,
-                                    ext::shared_ptr<FdmQuantoHelper> quantoHelper);
+        FdCIRVanillaEngine(ext::shared_ptr<CoxIngersollRossProcess> cirProcess,
+                           ext::shared_ptr<GeneralizedBlackScholesProcess> bsProcess,
+                           Size tGrid,
+                           Size xGrid,
+                           Size vGrid,
+                           Size dampingSteps,
+                           Real rho,
+                           const FdmSchemeDesc& schemeDesc = FdmSchemeDesc::ModifiedHundsdorfer(),
+                           ext::shared_ptr<FdmQuantoHelper> quantoHelper = {});
+
+        FdCIRVanillaEngine(ext::shared_ptr<CoxIngersollRossProcess> cirProcess,
+                           ext::shared_ptr<GeneralizedBlackScholesProcess> bsProcess,
+                           DividendSchedule dividends,
+                           Size tGrid,
+                           Size xGrid,
+                           Size vGrid,
+                           Size dampingSteps,
+                           Real rho,
+                           const FdmSchemeDesc& schemeDesc = FdmSchemeDesc::ModifiedHundsdorfer(),
+                           ext::shared_ptr<FdmQuantoHelper> quantoHelper = {});
 
         void calculate() const override;
 
         FdmSolverDesc getSolverDesc(Real equityScaleFactor) const;
 
       private:
+        ext::shared_ptr<GeneralizedBlackScholesProcess> bsProcess_;
+        ext::shared_ptr<CoxIngersollRossProcess> cirProcess_;
+        ext::shared_ptr<FdmQuantoHelper> quantoHelper_;
+        DividendSchedule dividends_;
         const Size tGrid_, xGrid_, rGrid_, dampingSteps_;
         const Real rho_;
         const FdmSchemeDesc schemeDesc_;
-        ext::shared_ptr<GeneralizedBlackScholesProcess> bsProcess_;
-        ext::shared_ptr<CoxIngersollRossProcess> cirProcess_;
-        
-        ext::shared_ptr<FdmQuantoHelper> quantoHelper_;
     };
 
     class MakeFdCIRVanillaEngine {
@@ -86,11 +96,16 @@ namespace QuantLib {
         MakeFdCIRVanillaEngine& withFdmSchemeDesc(
             const FdmSchemeDesc& schemeDesc);
 
+        MakeFdCIRVanillaEngine& withCashDividends(
+            const std::vector<Date>& dividendDates,
+            const std::vector<Real>& dividendAmounts);
+
         operator ext::shared_ptr<PricingEngine>() const;
 
       private:
         ext::shared_ptr<CoxIngersollRossProcess> cirProcess_;
         ext::shared_ptr<GeneralizedBlackScholesProcess> bsProcess_;
+        DividendSchedule dividends_;
         const Real rho_;
         Size tGrid_ = 10, xGrid_ = 100, rGrid_ = 100, dampingSteps_ = 0;
         ext::shared_ptr<FdmSchemeDesc> schemeDesc_;

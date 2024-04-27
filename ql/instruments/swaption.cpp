@@ -22,6 +22,7 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
+#include <ql/any.hpp>
 #include <ql/exercise.hpp>
 #include <ql/instruments/swaption.hpp>
 #include <ql/math/solvers1d/newtonsafe.hpp>
@@ -98,7 +99,7 @@ namespace QuantLib {
             auto vega_ = results_->additionalResults.find("vega");
             QL_REQUIRE(vega_ != results_->additionalResults.end(),
                        "vega not provided");
-            return boost::any_cast<Real>(vega_->second);
+            return ext::any_cast<Real>(vega_->second);
         }
     }
 
@@ -129,14 +130,29 @@ namespace QuantLib {
         }
     }
 
-    Swaption::Swaption(ext::shared_ptr<VanillaSwap> swap,
+    Swaption::Swaption(ext::shared_ptr<FixedVsFloatingSwap> swap,
                        const ext::shared_ptr<Exercise>& exercise,
                        Settlement::Type delivery,
                        Settlement::Method settlementMethod)
     : Option(ext::shared_ptr<Payoff>(), exercise), swap_(std::move(swap)),
       settlementType_(delivery), settlementMethod_(settlementMethod) {
         registerWith(swap_);
-        registerWithObservables(swap_);
+        // When we ask for the NPV of an expired swaption, the
+        // swap is not recalculated and thus wouldn't forward
+        // later notifications according to the default behavior of
+        // LazyObject instances.  This means that even if the
+        // evaluation date changes so that the swaption is no longer
+        // expired, the instrument wouldn't be notified and thus it
+        // wouldn't recalculate.  To avoid this, we override the
+        // default behavior of the underlying swap.
+        swap_->alwaysForwardNotifications();
+
+        vanilla_ = ext::dynamic_pointer_cast<VanillaSwap>(swap_);
+    }
+
+    void Swaption::deepUpdate() {
+        swap_->deepUpdate();
+        update();
     }
 
     bool Swaption::isExpired() const {
@@ -146,7 +162,6 @@ namespace QuantLib {
     void Swaption::setupArguments(PricingEngine::arguments* args) const {
 
         swap_->setupArguments(args);
-
         auto* arguments = dynamic_cast<Swaption::arguments*>(args);
 
         QL_REQUIRE(arguments != nullptr, "wrong argument type");
@@ -158,11 +173,10 @@ namespace QuantLib {
     }
 
     void Swaption::arguments::validate() const {
-        VanillaSwap::arguments::validate();
-        QL_REQUIRE(swap, "vanilla swap not set");
+        FixedVsFloatingSwap::arguments::validate();
+        QL_REQUIRE(swap, "swap not set");
         QL_REQUIRE(exercise, "exercise not set");
-        Settlement::checkTypeAndMethodConsistency(settlementType,
-                                                  settlementMethod);
+        Settlement::checkTypeAndMethodConsistency(settlementType, settlementMethod);
     }
 
     Volatility Swaption::impliedVolatility(Real targetValue,
